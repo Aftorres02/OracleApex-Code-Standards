@@ -251,7 +251,18 @@ select id
 - **Parameters**: Log main input parameters using `logger.append_param`.
 - **Exceptions**: Always catch and log using `logger.log_error`.
 
-### 3.4. AJAX Procedures
+### 3.4. Procedure Calls
+
+- **Multi-line calls:** Opening `(` on same line as call; parameters on next line(s) with 2-space indent; leading commas; closing `);` at same indent as parameters. Do not deeply indent parameters to align under the call name.
+
+```plsql
+procedure_name(
+    p_param_one => 'Value'
+  , p_param_two => 2
+);
+```
+
+### 3.5. AJAX Procedures
 
 - Procedures intended for APEX AJAX callbacks should:
   1.  Read inputs from `apex_application.g_x01`, `g_x02`, etc.

@@ -19,7 +19,7 @@ Read through our comprehensive standards:
 - [General Principles](../coding-standards/plsql/general.md)
 - [Naming Conventions](../coding-standards/plsql/naming.md)
 - [SQL & PL/SQL](../coding-standards/plsql/sql-plsql.md)
-- [Provided Templates](../coding-standards/plsql/templates.md)
+- [SQL/PLSQL Rules & Templates](../coding-standards/plsql/sql-plsql.md)
 - [APEX Specifics](../coding-standards/apex/apex.md)
 - [JavaScript](../coding-standards/ui-ux/javascript.md)
 - [CSS](../coding-standards/ui-ux/css.md)
