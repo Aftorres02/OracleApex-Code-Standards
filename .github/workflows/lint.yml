@@ -1,0 +1,13 @@
+name: PL/SQL Lint
+
+on:
+  pull_request:
+    branches: [main]
+
+jobs:
+  sql-lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - name: Run SQL Linter
+        run: echo "Linting step (Placeholder for sqlplus/sqlcl validation or sqlfluff)"

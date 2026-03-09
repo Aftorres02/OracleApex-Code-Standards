@@ -44,12 +44,12 @@ To improve scannability in long files, use standardized header blocks. The stand
 ### 1.2. Technical Debt & TODOs
 
 When code requires future action, follow this mandatory format:
-`-- TODO by: [Initials/User] [DD/Mon/YYYY] [Description]`
+`-- TODO_[Initials/User]_<YYYY-MON-DD> [Description]`
 
 - **Standard**:
 
 ```sql
--- TODO by: Aflores 18/Jan/2026 Pending validation with the business
+-- TODO_AFLORES_2026-MAR-08 Pending validation with the business
 ```
 
 ---
@@ -68,7 +68,9 @@ When code requires future action, follow this mandatory format:
     - **Unique**: `uk_<table>_<column>` (e.g., `uk_users_email`)
     - **Check**: `ck_<table>_<description>` (e.g., `ck_users_active_yn`)
   - **Objects**:
+    - **Project Prefix**: All core architectural objects (Tables, Views, Packages) MUST begin with the approved project prefix (e.g., `tf_`).
     - **Tables**: Plural (e.g., `tf_tickets`)
+    - **Views**: Plural names with suffix `_vw` (e.g., `tf_tickets_vw`)
     - **Packages**: `{module_name}_pkg` or `{module}_api`/`{module}_utils` (e.g., `tf_tickets_api`)
 
 ### 2.2. Table Definition Pattern
@@ -233,12 +235,14 @@ select id
 ### 3.2. Variable Naming
 
 - **Local Variables**: Prefix `l_` (e.g., `l_count`).
+- **Local Constants**: Prefix `lc_` (e.g., `lc_count`).
 - **Parameters**: Prefix `p_` (e.g., `p_ticket_id`).
+- **Output Parameters**: Prefix `o_` (e.g., `o_error_msg`).
+- **In/Out Parameters**: Prefix `io_` (e.g., `io_error_msg`).
 - **Global Variables**: Prefix `g_` (e.g., `g_user`).
-- **Constants**: Prefix `gc_` (e.g., `gc_scope_prefix`).
+- **Global Constants**: Prefix `gc_` (e.g., `gc_scope_prefix`).
 - **Cursors**: Prefix `l_cursor`
 - **Records**: Prefix `l_` (e.g., `l_{object_context}_rec`).
-- **Output Parameters**: Prefix `x_` (e.g., `x_error_msg`).
 
 ### 3.3. Instrumentation (Logging)
 
@@ -279,14 +283,22 @@ select id
 /**
  * Short description of procedure.
  *
+ * Example: (This force the developer to run at least once the procedure)
+ * procedure_name(
+ *   p_value => 'Value'
+ * , o_error_message => null
+ * );
+ *
  * @author Angel Flores (Consultant)
- * @created Saturday, 10/Oct/2026
+ * @created Saturday, 10/October/2026
  * @param p_value Description
- * @param x_error_message Output error
+ * @param o_error_message Output error
+ * @param io_error In/Out error state
  */
 procedure procedure_name(
     p_value                                   in varchar2
-  , x_error_message                          out varchar2
+  , o_error_message                           out varchar2
+  , io_error                                  in out varchar2
 )
 is
   l_scope  logger_logs.scope%type := gc_scope_prefix || 'procedure_name';
@@ -399,9 +411,13 @@ exception
 end move_ticket_ajax;
 ```
 
+## 6. Procedure/function calls
+
+- **Multi-line calls:** Opening `(` on same line as call; parameters on next line(s) with 2-space indent; leading commas; closing `);` at same indent as parameters. Do not deeply indent parameters to align under the call name.
+
 ---
 
-## 6. Frontend & UI/UX
+## 7. Frontend & UI/UX
 
 For JavaScript, CSS, and UI/UX standards, please refer to:
 **[APEX_FrontEnd_UIUX_Guidelines.md](./APEX_FrontEnd_UIUX_Guidelines.md)** (to be added in this repository).
