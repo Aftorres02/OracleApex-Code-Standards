@@ -44,12 +44,12 @@ To improve scannability in long files, use standardized header blocks. The stand
 ### 1.2. Technical Debt & TODOs
 
 When code requires future action, follow this mandatory format:
-`-- TODO_[Initials/User]_<YYYY-MON-DD> [Description]`
+`-- TODO_[Initials/User]_<MONTH-DD-YYYY> [Description]`
 
 - **Standard**:
 
 ```sql
--- TODO_AFLORES_2026-MAR-08 Pending validation with the business
+-- TODO_AFLORES_MARCH-09-2026 Pending validation with the business
 ```
 
 ---
@@ -301,7 +301,7 @@ procedure_name(
  * );
  *
  * @author Angel Flores (Consultant)
- * @created Saturday, 10/October/2026
+ * @created March 09, 2026
  * @param p_value Description
  * @param o_error_message Output error
  * @param io_error In/Out error state
@@ -339,7 +339,7 @@ end procedure_name;
  * @issue
  *
  * @author Angel Flores (Consultant)
- * @created Saturday, 10/Oct/2026
+ * @created March 09, 2026
  *
  * @param p_value Description of input
  * @return varchar2 Description of return value
@@ -381,7 +381,7 @@ end function_name;
  * @issue
  *
  * @author Angel Flores (Consultant)
- * @created Saturday, 10/Oct/2026
+ * @created March 09, 2026
  * @input g_x01 ticket_id, g_x02 board_column_id (via apex_application)
  */
 procedure move_ticket_ajax

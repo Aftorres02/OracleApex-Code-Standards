@@ -9,6 +9,6 @@
 - [ ] **SQL & PL/SQL Formatting** strictly adheres to leading-comma alignments and standard 2-space indentation.
 - [ ] **Code Sectioning** (`===` and `---` comment blocks) has been applied to organize long files.
 - [ ] **Proper Error Handling** (`logger.log_error`, `apex_error.add_error`) has been securely implemented.
-- [ ] **Technical Debt & TODOs** have been properly marked with initials and dates (`-- TODO_[Initials]_<YYYY-MON-DD>`).
+- [ ] **Technical Debt & TODOs** have been properly marked with initials and dates (`-- TODO_[Initials]_<MONTH-DD-YYYY>`).
 - [ ] **Comments are written in English**, specifically detailing business logic (what/why over how).
 - [ ] **APEX Application Export** (`.sql` file) correlates strictly with the changes (if the UI logic was changed).

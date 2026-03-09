@@ -68,14 +68,14 @@ refresh_cache();
 ## 3. Technical Debt & TODOs
 
 When code requires future action, follow a mandatory format:
-`-- TODO_[Initials/User]_<YYYY-MON-DD> [Description]`
+`-- TODO_[Initials/User]_<MONTH-DD-YYYY> [Description]`
 
 ### Examples
 
 **GOOD**:
 
 ```sql
--- TODO_AFLORES_2026-MAR-08 Pending validation with the business
+-- TODO_AFLORES_MARCH-09-2026 Pending validation with the business
 ```
 
 **BAD**:
