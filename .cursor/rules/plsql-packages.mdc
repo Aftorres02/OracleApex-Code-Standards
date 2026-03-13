@@ -1,0 +1,51 @@
+---
+description: PL/SQL Package rules, parameters, procedure calls, and %type usage
+globs: "**/*.sql,**/*.pks,**/*.pkb"
+alwaysApply: false
+---
+
+# PL/SQL Package Standards
+
+## 1. Always Use Packages
+Never build standalone functions or procedures. All PL/SQL logic must be in a package (`*_api` or `*_utils`).
+
+## 2. Variable & Parameter Prefixes
+- Local Variables: `l_`
+- Parameters: `p_`
+- Output Parameters: `o_`
+- In/Out Parameters: `io_`
+- Global Variables: `g_`
+- Scope Constant: `gc_scope_prefix`
+
+## 3. Use %type References
+Prefer anchored declarations (`table.column%type`) over hardcoded data types (like `varchar2(100)` or `number`).
+
+```plsql
+procedure update_ticket(
+    p_ticket_id   in tf_tickets.ticket_id%type
+  , p_description in tf_tickets.description%type
+)
+```
+
+## 4. Multi-line Procedure Calls
+- Opening `(` on same line as call.
+- First parameter on next line, indented **2 spaces**.
+- Use leading commas, vertically align arrows `=>`.
+- Closing `);` aligned with the parameters (2-space indent).
+
+```plsql
+l_rest_response := apex_web_service.make_rest_request(
+    p_url         => gc_api_url
+  , p_http_method => 'GET'
+);
+```
+
+## 5. Documentation Templates
+Use JavaDoc-style comments on public procedures/functions.
+- `@author [Name]`
+- `@created [Month DD, YYYY]`
+- `@param [name] [desc]`
+- `@return [type] [desc]`
+
+## 6. Instrumentation
+Always use `logger`. Start/End logging in every procedure, append params, log exceptions.

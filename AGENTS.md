@@ -2,433 +2,213 @@
 
 This document outlines the coding standards and best practices for the Project. These standards are derived from the existing codebase and the project's configuration files, combining the visual and logical patterns established in the project.
 
+It serves as the master consolidation of all detailed standards found in `docs/coding-standards/`.
+
+---
+
 ## 1. General Principles
 
 - **Consistency**: Adhere strictly to the patterns defined in this document.
 - **Case Sensitivity**:
   - **SQL/PLSQL**: Lowercase for keywords and identifiers.
   - **JavaScript**: camelCase for variables/functions, UPPERCASE for constants.
-- **Indentation**: Use **2 spaces** for indentation.
+- **Indentation**: Use **2 spaces** for indentation. DO NOT use tabs.
 - **Formatting**:
   - **Leading Commas**: Place commas at the beginning of the line for lists (columns, parameters).
   - **Vertical Alignment**: Align identifiers, types, column names, and assignments vertically for readability.
-  - **Operators**: Place SQL operators (`AND`, `OR`) at the beginning of the line.
+  - **Operators**: Place SQL operators (`and`, `or`) at the beginning of the line.
   - **Blocks**: Indent the content of `IF`, `LOOP`, `CASE`, and `BEGIN...END` blocks.
+- **IF/THEN Formatting**: Keep `if` condition and `then` on the **same line**. Do not put `then` on a separate line.
 
 ### 1.1. Code Sectioning
 
-To improve scannability in long files, use standardized header blocks. The standard width is **80 characters**.
+To improve scannability in long files, use standardized header blocks. 
 
 - **Level 1: High Importance / Complex Blocks** (Use `=`):
-
 ```sql
 -- =============================================================================
 -- IMPORTANT UPDATE FOR SEARCH RESULTS
 -- =============================================================================
--- Code goes here
--- =============================================================================
 ```
 
 - **Level 2: Minor Blocks / Logic Separation** (Use `-`):
-
 ```sql
 -- -----------------------------------------------------------------------------
--- Set values if exists when condition
--- -----------------------------------------------------------------------------
--- Code goes here
+-- Refresh cache
 -- -----------------------------------------------------------------------------
 ```
-
-- **In-line Comments**: Use a single space after `--` (e.g., `-- This is a comment`).
 
 ### 1.2. Technical Debt & TODOs
 
 When code requires future action, follow this mandatory format:
-`-- TODO_[Initials/User]_<MONTH-DD-YYYY> [Description]`
-
-- **Standard**:
+`-- TODO_[Initials]_<MONTH-DD-YYYY> [Description]`
 
 ```sql
 -- TODO_AFLORES_MARCH-09-2026 Pending validation with the business
 ```
 
+### 1.3 Security & SQL Injection Prevention
+- Never concatenate user input into dynamic SQL.
+- Use `execute immediate ... using ...` for dynamic statements.
+- Use `dbms_assert` when passing object names dynamically.
+
 ---
 
-## 2. Database (SQL & DDL)
+## 2. Naming Conventions
 
-### 2.1. Naming Conventions
+- **Keywords**: ALL SQL keywords in lowercase (`create`, `table`, `select`, `from`, `where`).
+- **Objects**: ALL object names in `snake_case`.
+- **Project Prefix**: All core architectural objects (Tables, Views, Packages) MUST begin with the approved project prefix (e.g., `tf_`).
+  - **Tables**: Plural (e.g., `tf_tickets`)
+  - **Views**: Plural names with suffix `_vw` (e.g., `tf_tickets_vw`)
+  - **Packages**: `{module_name}_pkg` or `{module}_api`/`{module}_utils` (e.g., `tf_tickets_api`)
 
-- **Keywords**: ALL SQL keywords in lowercase (`create`, `table`, `select`, `from`, `where`...).
-- **Objects**: ALL object names in snake_case (lowercase with underscores).
-- **Prefixes/Suffixes**:
-  - **Validations**: `active_yn` (or `_yn` suffix) for boolean flags 'Y'/'N'.
-  - **Constraints**:
-    - Always use PREFIXES for constraints.
-    - **Foreign Key**: `fk_<table>_<ref_table>` (e.g., `fk_tickets_users`)
-    - **Unique**: `uk_<table>_<column>` (e.g., `uk_users_email`)
-    - **Check**: `ck_<table>_<description>` (e.g., `ck_users_active_yn`)
-  - **Objects**:
-    - **Project Prefix**: All core architectural objects (Tables, Views, Packages) MUST begin with the approved project prefix (e.g., `tf_`).
-    - **Tables**: Plural (e.g., `tf_tickets`)
-    - **Views**: Plural names with suffix `_vw` (e.g., `tf_tickets_vw`)
-    - **Packages**: `{module_name}_pkg` or `{module}_api`/`{module}_utils` (e.g., `tf_tickets_api`)
+### 2.1 Variables & Parameters
+- **Local Variables**: `l_` (e.g., `l_count`)
+- **Local Constants**: `lc_` (e.g., `lc_count`)
+- **Parameters**: `p_` (e.g., `p_ticket_id`)
+- **Output Parameters**: `o_` (e.g., `o_error_msg`)
+- **In/Out Parameters**: `io_` (e.g., `io_error_msg`)
+- **Global Variables**: `g_`
+- **Global Constants**: `gc_`
+- **Cursors**: `l_cursor`
+- **Records**: `l_{context}_rec`
 
-### 2.2. Table Definition Pattern
+### 2.2 Constraints
+Always use prefixes: `fk_` (Foreign Key), `uk_` (Unique), `ck_` (Check).
 
-Every table must include the following standard columns and structure.
+---
 
-#### 2.2.1. Primary Key
+## 3. Database (Tables & DDL)
 
-Identity column naming `<table_name>_id`.
-
+### 3.1. Primary Key
+The primary key column must always follow the pattern `<table_name>_id`. Use identity columns.
 ```sql
 ticket_id number generated by default on null as identity (start with 1) primary key not null
 ```
 
-#### 2.2.2. Standard Audit Columns
+### 3.2. Data Types & Char Semantics
+- **Strings**: MUST always use `char` byte semantics (e.g., `varchar2(100 char)`), never `byte` or implicit size.
+- **Numbers**: Use `number` for IDs, or `number(p,s)` for decimals.
+- **Timestamps**: Use `timestamp with local time zone` for audit events.
 
-Use the robust `sys_context` coalescing to support both APEX sessions and direct DB connections.
-
+### 3.3. Standard Audit Columns & Active Flag
+Every table must include the standard active flag and audit columns coalescing `sys_context`:
 ```sql
-, created_by       varchar2(60 char) default
-                   coalesce(
-                     sys_context('APEX$SESSION','app_user')
-                   , regexp_substr(sys_context('userenv','client_identifier'),'^[^:]*')
-                   , sys_context('userenv','session_user')
-                   )
-                   not null
-, created_on       timestamp with local time zone default localtimestamp not null
-, last_updated_by  varchar2(60 char)
-, last_updated_on  timestamp with local time zone
+  , active_yn                    varchar2(1 char) default 'Y' not null
+  , created_by                   varchar2(60 char) default
+                                  coalesce(
+                                    sys_context('APEX$SESSION','app_user')
+                                  , regexp_substr(sys_context('userenv','client_identifier'),'^[^:]*')
+                                  , sys_context('userenv','session_user')
+                                  )
+                                  not null
+  , created_on                   timestamp with local time zone default localtimestamp not null
+  , last_updated_by              varchar2(60 char)
+  , last_updated_on              timestamp with local time zone
+  , constraint ck_tf_tickets_active_yn check (active_yn in ('Y', 'N'))
 ```
 
-#### 2.2.3. Active Flag Convention
+### 3.4. Trigger Patterns (Audit Automation)
+Maintain audit columns automatically using a **Compound Trigger**.
+> **Note on Soft-Deletes**: When performing a soft-delete (e.g., `update ... set active_yn = 'N'`), do **not** set `last_updated_by` or `last_updated_on` in your application code. The compound trigger handles it.
 
-```sql
-, active_yn        varchar2(1 char) default 'Y' not null
-, constraint ck_<table>_active_yn check (active_yn in ('Y', 'N'))
-```
-
-### 2.3. Data Types
-
-- **Strings**: Always use `char` semantics (e.g., `varchar2(100 char)`).
-- **Numbers**: Use `number` without precision for IDs/integers, or `number(p,s)` for decimals.
-- **Dates**: Use `date` for dates without time specificity needs.
-- **Timestamps**: Use `timestamp with local time zone` for audit and system events.
-- **CLOB**: Use for large text fields (descriptions, notes).
-
-### 2.4. Trigger Patterns (Automation)
-
-To automatically maintain audit columns, use a **Compound Trigger**.
-
-```sql
-create or replace trigger <table>_compound_trg
-for insert or update on <table>
-compound trigger
-
-  before each row is
-  begin
-    if updating then
-      :new.last_updated_on := localtimestamp;
-      :new.last_updated_by := coalesce(
-                                sys_context('APEX$SESSION','app_user')
-                              , regexp_substr(sys_context('userenv','client_identifier'),'^[^:]*')
-                              , sys_context('userenv','session_user')
-                              );
-    end if;
-  end before each row;
-
-end <table>_compound_trg;
-/
-```
-
-### 2.5. Documentation (Comments)
-
-Comments are mandatory. Use a PL/SQL block with `execute immediate` to ensure scripts are re-runnable and robust.
-
-```sql
-begin
-  execute immediate 'comment on column table.col is ''Description.''';
-  execute immediate 'comment on table table is ''Description of table.''';
-end;
-/
-```
-
-### 2.6. File Structure for DDL
-
-1.  **Table Creation Statement** (with constraints).
-2.  **Performance Indexes**.
-3.  **Triggers**.
-4.  **Comments** (Grouped in a `begin...end;` block).
-
-### 2.7. DML Patterns
-
-- **Insert**: Always use the column list and leading commas.
-
-```sql
-insert
-  into employees (
-       employee_id
-     , first_name
-     , last_name
-     , created_by
-)
-values (
-       p_employee_id
-     , p_first_name
-     , p_last_name
-     , l_user
-);
-```
-
-- **Merge**: Strongly recommended for sync/upsert operations.
-
-```sql
-merge into task_list t
-using (select p_task_id as task_id
-         from dual
-) s
-   on (t.task_id = s.task_id)
- when matched then
-  update
-      set t.task_name = p_task_name
- when not matched then
-  insert (
-         task_name
-       , active_yn
-  )
-  values (
-         p_task_name
-       , 'Y'
-  );
-```
-
-### 2.8. Query Patterns (SELECT)
-
-- **First Column**: Place the first column on the same line as `select`, separated by **2 spaces**.
-- **Alignment**: Align subsequent columns vertically. The comma should be indented to match the visual start of the columns (leading comma alignment).
-
-```sql
-select id
-     , parent_id
-     , nombre
-     , description
-   from demo_hierarchical_data
- where active_yn = 'Y'
- order by orden;
-```
+### 3.5. Table Comments & DDL Structure
+Comments are mandatory via `execute immediate`. Ensure SQL files follow order: `table`, `indexes`, `triggers`, `comments`.
 
 ---
 
-## 3. PL/SQL Standards
+## 4. Query Standards (SELECT, INSERT, MERGE)
 
-### 3.1. Package Structure
+### 4.1 SELECT Patterns
+- **Alignment**: Place first column on same line as `select` (2 spaces out). Align subsequent columns vertically with leading commas.
+- **Aliases**: Name the alias for every column (`as my_col`). 
+- **LEFT JOIN**: Align with `from`. `on` stays on the same line as the joined table and alias. `and` stays on the next line aligned with expressions after `on`.
 
-- **Naming**:
-  - Business Logic: `*_api` (e.g., `tf_tickets_api`)
-  - Utilities: `*_utils` (e.g., `tf_tickets_utils`)
-- **Scope Constant**: Define a scope prefix at the top of the body for logging context.
-  ```plsql
-  gc_scope_prefix constant varchar2(31) := lower($$plsql_unit) || '.';
-  ```
-
-### 3.2. Variable Naming
-
-- **Local Variables**: Prefix `l_` (e.g., `l_count`).
-- **Local Constants**: Prefix `lc_` (e.g., `lc_count`).
-- **Parameters**: Prefix `p_` (e.g., `p_ticket_id`).
-- **Output Parameters**: Prefix `o_` (e.g., `o_error_msg`).
-- **In/Out Parameters**: Prefix `io_` (e.g., `io_error_msg`).
-- **Global Variables**: Prefix `g_` (e.g., `g_user`).
-- **Global Constants**: Prefix `gc_` (e.g., `gc_scope_prefix`).
-- **Cursors**: Prefix `l_cursor`
-- **Records**: Prefix `l_` (e.g., `l_{object_context}_rec`).
-
-### 3.3. Instrumentation (Logging)
-
-- Use the `logger` package (e.g., Logger framework) for all instrumentation.
-- **Start/End**: Log start and end of all procedures/functions.
-- **Parameters**: Log main input parameters using `logger.append_param`.
-- **Exceptions**: Always catch and log using `logger.log_error`.
-
-### 3.4. Procedure Calls
-
-- **Multi-line calls:** Opening `(` on same line as call; parameters on next line(s) with 2-space indent; leading commas; closing `);` at same indent as parameters. Do not deeply indent parameters to align under the call name.
-
-```plsql
-procedure_name(
-    p_param_one => 'Value'
-  , p_param_two => 2
-);
+```sql
+select i.invoice_id             as invoice_id
+     , c.client_name            as client_name
+  from tf_invoices i
+  left join tf_clients        c on c.client_id = i.client_id
+                               and c.active_yn = 'Y'
 ```
 
-### 3.5. AJAX Procedures
+### 4.2 Function Calls in SELECT
+Break multi-parameter functions across lines, aligned `=>`.
+```sql
+select apex_item.checkbox2(
+           p_idx   => 1
+         , p_value => s.segment_num
+       ) as copy_segment
+```
 
-- Procedures intended for APEX AJAX callbacks should:
-  1.  Read inputs from `apex_application.g_x01`, `g_x02`, etc.
-  2.  Return JSON using `apex_json` package.
-  3.  Handle exceptions explicitly by returning a JSON object with `success: false`.
+### 4.3 INSERT & Seed MERGE
+Use leading-comma lists for both columns and values, perfectly aligned.
+
+### 4.4 Avoid Cursors — Use FOR Loop Queries
+Do not declare explicit cursors (`open`, `fetch`, `close`). Use implicit cursor `for` loops.
+
+### 4.5 Views and WITH Clause
+- **Views**: Use a **WITH** clause (common table expressions) for view bodies.
+- **CTE naming**: CTEs must start with **`w_`** (e.g. `w_base`, `w_inv`).
 
 ---
 
-## 4. Security & Error Handling
+## 5. PL/SQL Package Standards
 
-### 4.1. SQL Injection Prevention
+### 5.1 Always Use Packages
+Never build standalone functions/procedures. All logic must be in packages.
 
-- Never concatenate user input into dynamic SQL.
-- Use `execute immediate ... using ...` for dynamic statements.
-- Use `dbms_assert` when passing object names (tables, columns) dynamically.
+### 5.2 Use `%type` References
+Prefer anchored declarations (`table.column%type`) over hardcoded datatypes.
 
-### 4.2. APEX Error Handling
+### 5.3 Procedure Call Formatting
+For multi-line calls: `(` on same line. Parameters next line (2 spaces in). Vertically align `=>`. `);` aligned left with parameters.
 
-- Use `apex_error.add_error` to display user-friendly messages on the UI.
-- Use `p_display_location => apex_error.c_inline_with_field_and_notif` for validation errors.
+### 5.4 Instrumentation (Logging)
+- Logging scope: `gc_scope_prefix constant varchar2(31) := lower($$plsql_unit) || '.';`
+- Always log START, END, input params, and OTHERS exceptions via `logger`.
+- **Conditional Compilation** can be used (`$if $$verbose_output $then`) for expensive debug logs.
 
----
-
-## 5. Examples
-
-### 5.1. Procedure Template
-
-```sql
-/**
- * Short description of procedure.
- *
- * Example: (This force the developer to run at least once the procedure)
- * procedure_name(
- *   p_value => 'Value'
- * , o_error_message => null
- * );
- *
- * @author Angel Flores (Consultant)
- * @created March 09, 2026
- * @param p_value Description
- * @param o_error_message Output error
- * @param io_error In/Out error state
- */
-procedure procedure_name(
-    p_value                                   in varchar2
-  , o_error_message                           out varchar2
-  , io_error                                  in out varchar2
-)
-is
-  l_scope  logger_logs.scope%type := gc_scope_prefix || 'procedure_name';
-  l_params logger.tab_param;
-begin
-  logger.append_param(l_params, 'p_value: ', p_value);
-  logger.log('START', l_scope, null, l_params);
-
-  -- Business Logic Here
-
-  logger.log('END', l_scope, null, l_params);
-exception
-  when OTHERS then
-    logger.log_error('Unhandled Exception', l_scope, null, l_params);
-    raise;
-end procedure_name;
-```
-
-### 5.2. Function Template
-
-```sql
-/**
- * Short description of function.
- *
- * @example
- *
- * @issue
- *
- * @author Angel Flores (Consultant)
- * @created March 09, 2026
- *
- * @param p_value Description of input
- * @return varchar2 Description of return value
- */
-function function_name(
-    p_value                                   in varchar2
-)
-return varchar2
-is
-  l_scope  logger_logs.scope%type := gc_scope_prefix || 'function_name';
-  l_params logger.tab_param;
-  l_return_value                              varchar2(100 char);
-begin
-  logger.append_param(l_params, 'p_value: ', p_value);
-  logger.log('START', l_scope, null, l_params);
-
-  l_return_value := 'value';
-
-  logger.append_param(l_params, 'l_return_value: ', l_return_value);
-  logger.log('END', l_scope, null, l_params);
-
-  return l_return_value;
-exception
-  when OTHERS then
-    logger.log_error('Unhandled Exception', l_scope, null, l_params);
-    raise;
-end function_name;
-```
-
-### 5.3. AJAX Procedure Example
-
-```sql
-/**
- * Moves a ticket to another board column (AJAX callback).
- *
- * @example
- *   tf_tickets_api.move_ticket_ajax;
- *
- * @issue
- *
- * @author Angel Flores (Consultant)
- * @created March 09, 2026
- * @input g_x01 ticket_id, g_x02 board_column_id (via apex_application)
- */
-procedure move_ticket_ajax
-is
-  l_scope  logger_logs.scope%type := gc_scope_prefix || 'move_ticket_ajax';
-  l_params logger.tab_param;
-
-  l_ticket_id                         tf_tickets.ticket_id%type := apex_application.g_x01;
-  l_board_column_id                   tf_board_columns.board_column_id%type := apex_application.g_x02;
-begin
-  logger.append_param(l_params, 'l_ticket_id: ', l_ticket_id);
-  logger.append_param(l_params, 'l_board_column_id: ', l_board_column_id);
-  logger.log('START', l_scope, null, l_params);
-
-  logger.log('moving ticket: ' || l_ticket_id || ' to column: ' || l_board_column_id, l_scope, null, l_params);
-
-  -- This must be standard procedure, because this example is for reproducing the return of an AJAX procedure
-  update tf_tickets
-     set board_column_id = l_board_column_id
-   where ticket_id = l_ticket_id;
-  ------------------------------------------
-
-
-  apex_json.open_object;
-  apex_json.write('success', true);
-  apex_json.close_object;
-
-  logger.log('END', l_scope, null, l_params);
-
-exception
-  when OTHERS then
-    logger.log_error('Unhandled Exception', l_scope, null, l_params);
-
-    apex_json.open_object;
-    apex_json.write('success', false);
-    apex_json.write('message', sqlerrm);
-    apex_json.close_object;
-end move_ticket_ajax;
-```
-
-## 6. Procedure/function calls
-
-- **Multi-line calls:** Opening `(` on same line as call; parameters on next line(s) with 2-space indent; leading commas; closing `);` at same indent as parameters. Do not deeply indent parameters to align under the call name.
+### 5.5 Documentation Templates
+Use JavaDoc-style comments for public procedures/functions (`@author`, `@created`, `@param`, `@return`).
 
 ---
 
-## 7. Frontend & UI/UX
+## 6. APEX Application Layer
 
-For JavaScript, CSS, and UI/UX standards, please refer to:
-**[APEX_FrontEnd_UIUX_Guidelines.md](./APEX_FrontEnd_UIUX_Guidelines.md)** (to be added in this repository).
+### 6.1 APEX Error Handling
+Never use `raise_application_error` to show a message to an APEX user. Use `apex_error.add_error`.
+
+### 6.2 AJAX Procedures
+AJAX endpoints read `apex_application.g_x01` and must output JSON (`apex_json.open_object; apex_json.write('success', true);`).
+
+### 6.3 Process Conditions
+All APEX processes in the Processing section must have a Server-side condition (e.g. `Request IN (CREATE,SAVE)`).
+
+### 6.4 Never Put HTML In SQL
+Do not embed HTML in `SELECT` statements for reports. Return pure data and use APEX Template Directives (e.g., `#STATUS#`).
+
+### 6.5 Select Lists (LOV)
+When using "Display Null Value", set Null Display Value to `&SELECT_LABEL.`
+
+### 6.6 DML Forms
+Convert Automatic DML forms to SQL or PL/SQL mode, omitting columns not actually needed by the form.
+
+---
+
+## 7. APEX Page UX
+
+### 7.1 Page Numbering Convention
+Organize structurally. Hundreds for modules, tens for details. (e.g., 100 = Clients, 110 = Client Edit).
+
+### 7.2 Region Naming & IDs
+- **Hidden regions**: Enclose name in curly braces (e.g. `{params}`).
+- **Static IDs**: Must have suffix corresponding to type (e.g., `ticketsIR`, `clientsCR`, `paramsSR`).
+
+### 7.3 Button Standards
+- **Static IDs**: Must identically match Button Name (UPPERCASE). (e.g., `CREATE`, `DELETE`).
+- **Icons**: Use global app substitution strings (`&CREATE_ICON.`, `&DELETE_ICON.`).
+
+---
+For JavaScript/CSS/UI standards, refer to documentation under `docs/coding-standards/ui-ux/`.

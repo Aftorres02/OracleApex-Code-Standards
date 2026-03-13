@@ -1,0 +1,37 @@
+---
+description: APEX Error Handling, AJAX procedures, and APEX-specific SQL rules
+globs: "**/*.sql,**/*.pks,**/*.pkb"
+alwaysApply: false
+---
+
+# APEX Backend Standards
+
+## 1. Error Handling
+- Never use `raise_application_error(-2000X, ...)` for APEX user messages.
+- Always use `apex_error.add_error()`.
+
+```plsql
+apex_error.add_error(
+    p_message          => 'Invalid ticket status.'
+  , p_display_location => apex_error.c_inline_with_field_and_notif
+  , p_page_item_name   => 'P1_STATUS'
+);
+```
+
+## 2. AJAX Procedures
+For APEX AJAX / On-Demand Processes:
+1. Inputs come from `apex_application.g_x01`...
+2. Output JSON using `apex_json`.
+3. Handle EXCEPTIONS and output `{ "success": false, "message": "error msg" }`.
+
+```plsql
+exception
+  when OTHERS then
+    apex_json.open_object;
+    apex_json.write('success', false);
+    apex_json.write('message', sqlerrm);
+    apex_json.close_object;
+```
+
+## 3. No HTML inside SQL
+Never put HTML tags inside `select` statement columns in APEX reports. Return pure data from the query and use **APEX Template Directives** (e.g. `<span class="u-color-error">#STATUS#</span>`) in the column properties inside APEX Builder.

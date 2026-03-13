@@ -1,0 +1,50 @@
+---
+description: SQL Query formatting, SELECT statements, Joins, and Function Calls
+globs: "**/*.sql,**/*.pks,**/*.pkb"
+alwaysApply: false
+---
+
+# SQL Query Standards
+
+## 1. SELECT Alignment & Aliases
+- Place the first column on the same line as `select`, separated by **2 spaces**.
+- Align subsequent columns vertically with **leading commas**.
+- **Always alias columns** using `as alias_name`.
+
+```sql
+select c.customer_id   as customer_id
+     , c.customer_name as customer_name
+  from tf_customers c
+```
+
+## 2. LEFT JOIN Alignment
+- Align `left join` with `from`.
+- `on` stays on the same line as the table and alias, aligned across all joins.
+- `and` conditions go on the next line, aligned with the expression after `on`.
+
+```sql
+select i.invoice_id             as invoice_id
+     , c.client_name            as client_name
+  from tf_invoices i
+  left join tf_clients        c on c.client_id = i.client_id
+                               and c.active_yn = 'Y'
+  left join tf_businesses   bus on bus.business_id = i.business_id
+                               and bus.active_yn = 'Y'
+```
+
+## 3. Function Calls in SELECT
+Break multi-parameter functions across lines, indent 2 spaces, align `=>`. 
+
+```sql
+select apex_item.checkbox2(
+           p_idx   => 1
+         , p_value => s.segment_num
+       ) as copy_segment
+```
+
+## 4. Avoid Cursors
+Do not use explicit cursors (`open`, `fetch`, `close`). Use implicit `for l_rec in (select ...)` loops.
+
+## 5. Views and WITH Clause
+- Always use a `with` clause for view bodies instead of a flat select.
+- Name CTEs with a **`w_`** prefix (e.g., `w_base`, `w_invoices`).

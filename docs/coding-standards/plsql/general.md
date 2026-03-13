@@ -103,3 +103,26 @@ execute immediate 'select count(*) from ' || dbms_assert.enquote_name(p_table) |
 ```sql
 execute immediate 'select count(*) from ' || p_table || ' where id = ' || p_id;
 ```
+
+## 5. IF / THEN Formatting
+
+Keep `if` condition and `then` on the **same line**. Do not put `then` on a separate line.
+
+### Examples
+
+**GOOD**:
+
+```sql
+if l_name is not null then
+  -- logic
+end if;
+```
+
+**BAD**:
+
+```sql
+if l_name is not null
+then
+  -- logic
+end if;
+```

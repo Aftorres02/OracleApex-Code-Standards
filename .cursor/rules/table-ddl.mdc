@@ -1,0 +1,42 @@
+---
+description: Table DDL formatting, column naming, PKs, active flags, and data types
+globs: "**/*.sql"
+alwaysApply: false
+---
+
+# Table & DDL Standards
+
+## 1. Naming & Primary Keys
+- All DB objects in `snake_case`. Core tables must use the project prefix (e.g. `tf_`).
+- Primary Key columns must be named `<table_name>_id`. (e.g., `ticket_id` for table `tf_tickets`). Never use generic `id`.
+
+## 2. Data Types & Char Semantics
+- String columns MUST ALWAYS use `char` semantics (`varchar2(100 char)`), never `byte` or implicit size.
+- Use `number` for IDs.
+- Use `timestamp with local time zone` for audit events.
+
+## 3. Standard Columns
+Every table must include an active flag and audit columns:
+```sql
+  , active_yn                    varchar2(1 char) default 'Y' not null
+  , created_by                   varchar2(60 char) default
+                                  coalesce(
+                                    sys_context('APEX$SESSION','app_user')
+                                  , regexp_substr(sys_context('userenv','client_identifier'),'^[^:]*')
+                                  , sys_context('userenv','session_user')
+                                  )
+                                  not null
+  , created_on                   timestamp with local time zone default localtimestamp not null
+  , last_updated_by              varchar2(60 char)
+  , last_updated_on              timestamp with local time zone
+```
+
+## 4. Compound Triggers & Soft-Deletes
+Maintain audit columns automatically using a compound trigger (`before each row is ... :new.last_updated_on := localtimestamp;`).
+**DO NOT** set `last_updated_by` or `last_updated_on` manually in application code when running a soft delete (`update set active_yn = 'N'`). Let the trigger handle it.
+
+## 5. DDL File Structure
+1. `create table ...`
+2. `create index ...`
+3. `create or replace trigger ...`
+4. `begin execute immediate 'comment on table/column ...'; end;`

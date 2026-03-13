@@ -4,11 +4,17 @@
 
 ## Checklist
 
-- [ ] **Naming conventions** match our standard (e.g., `snake_case` for DB objects, `l_`/`p_`/`g_` prefixes for variables).
-- [ ] **No `SELECT *` executed**; all columns are explicitly defined.
+- [ ] **Branch name** follows convention: `<TICKET-NUMBER>-<short-description>` (e.g., `NLM-21-adding-segments-to-client`).
+- [ ] **Naming conventions** match our standard (e.g., `snake_case` for DB objects, `l_`/`p_`/`g_` prefixes for variables, `table_name_id` for PKs).
+- [ ] **No `select *` executed**; all columns are explicitly defined and aliased.
 - [ ] **SQL & PL/SQL Formatting** strictly adheres to leading-comma alignments and standard 2-space indentation.
 - [ ] **Code Sectioning** (`===` and `---` comment blocks) has been applied to organize long files.
 - [ ] **Proper Error Handling** (`logger.log_error`, `apex_error.add_error`) has been securely implemented.
 - [ ] **Technical Debt & TODOs** have been properly marked with initials and dates (`-- TODO_[Initials]_<MONTH-DD-YYYY>`).
 - [ ] **Comments are written in English**, specifically detailing business logic (what/why over how).
-- [ ] **APEX Application Export** (`.sql` file) correlates strictly with the changes (if the UI logic was changed).
+- [ ] **APEX Application Export** (`.sql` or YML) correlates strictly with the changes (if the UI logic was changed).
+- [ ] **All APEX Processes** have a Server-side Condition (button or `REQUEST IN ()`).
+- [ ] **No HTML in SQL queries**; rendering is handled via APEX Template Directives.
+- [ ] **No standalone procedures/functions**; all PL/SQL is in packages.
+- [ ] **`varchar2` columns** use `char` semantics (e.g., `varchar2(100 char)`).
+- [ ] **`%type` references** are used instead of hardcoded data types where applicable.

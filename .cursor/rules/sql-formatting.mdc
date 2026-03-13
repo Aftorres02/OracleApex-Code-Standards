@@ -1,0 +1,56 @@
+---
+description: SQL and PL/SQL Formatting, Indentation, and IF/THEN rules
+globs: "**/*.sql,**/*.pks,**/*.pkb"
+alwaysApply: false
+---
+
+# SQL / PL-SQL Formatting Standards
+
+## 1. Indentation & Case
+- Use **2 spaces** for indentation. DO NOT USE TABS.
+- **SQL/PLSQL keywords**: ALL lowercase (e.g. `select`, `begin`, `if`).
+- **Identifiers**: snake_case (e.g. `l_count`, `tf_tickets`).
+
+## 2. Lists & Commas
+- **Leading Commas**: Place commas at the beginning of the line for lists (columns, parameters).
+- **Vertical Alignment**: Align identifiers, types, column names, and assignments vertically for readability.
+- **Operators**: Place SQL operators (`and`, `or`) at the beginning of the line.
+
+## 3. IF / THEN Formatting
+Keep `if` condition and `then` on the **same line**. Do not put `then` on a separate line.
+
+**GOOD**:
+```sql
+if l_name is not null then
+  -- logic
+end if;
+```
+
+**BAD**:
+```sql
+if l_name is not null
+then
+  -- logic
+end if;
+```
+
+## 4. Code Sectioning
+- Level 1 blocks use `=`
+- Level 2 blocks use `-`
+
+```sql
+-- =============================================================================
+-- IMPORTANT SETTINGS
+-- =============================================================================
+
+-- -----------------------------------------------------------------------------
+-- Minor logic
+-- -----------------------------------------------------------------------------
+```
+
+## 5. TODOs
+Follow this mandatory format:
+`-- TODO_[Initials]_<MONTH-DD-YYYY> [Description]`
+
+**GOOD**:
+`-- TODO_AFLORES_MARCH-09-2026 Pending review`
