@@ -2,7 +2,7 @@
 
 ## 1. Consistency & Formatting
 
-- **Indentation**: Use **2 spaces** for indentation. Do not use tabs.
+- **Indentation**: Use **2 spaces** for indentation. Avoid using tabs.
 - **Case Sensitivity**:
   - **SQL/PLSQL**: Lowercase for keywords and identifiers.
   - **JavaScript**: camelCase for variables/functions, UPPERCASE for constants.
@@ -86,7 +86,7 @@ When code requires future action, follow a mandatory format:
 
 ## 4. Security & SQL Injection Prevention
 
-- Never concatenate user input into dynamic SQL.
+- Avoid concatenating user input into dynamic SQL.
 - Use `execute immediate ... using ...` for dynamic statements.
 - Use `dbms_assert` when passing object names (tables, columns) dynamically.
 
@@ -106,7 +106,7 @@ execute immediate 'select count(*) from ' || p_table || ' where id = ' || p_id;
 
 ## 5. IF / THEN Formatting
 
-Keep `if` condition and `then` on the **same line**. Do not put `then` on a separate line.
+Keep `if` condition and `then` on the **same line**. Avoid placing `then` on a separate line.
 
 ### Examples
 

@@ -2,7 +2,7 @@
 
 ## 1. Always Use Packages
 
-Never build standalone functions or procedures. All PL/SQL logic must be encapsulated within a package. This provides namespace isolation, supports overloading, and keeps the schema organized.
+All PL/SQL logic should be encapsulated within a package rather than standalone functions or procedures. This provides namespace isolation, supports overloading, and keeps the schema organized.
 
 ### Examples
 
@@ -92,16 +92,20 @@ begin
 end update_ticket;
 ```
 
-## 4. Procedure Calls
+## 4. Procedure / Function Calls
 
-- **Multi-line calls:** Opening `(` on same line as call; parameters on next line(s) with 2-space indent; leading commas; closing `);` at same indent as parameters. Do not deeply indent parameters to align under the call name.
+- **Multi-line calls:** Opening `(` on same line as call; parameters on next line(s) with 2-space indent; leading commas; closing `);` at same indent as parameters. Avoid deeply indenting parameters to align under the call name.
 
 **GOOD**:
 
 ```plsql
 procedure_name(
-    p_param_one => 'Value'
-  , p_param_two => 2
+    p_param_one   => 'Value'
+  , p_param_two   => 'Value Two'
+  , p_param_three => 'Value Three'
+  , p_param_four  => 'Value Four'
+  , p_param_five  => 'Value Five'
+  , p_param_six   => 'Value Six'
 );
 ```
 
@@ -119,20 +123,40 @@ procedure_name(p_param_one => 'Value',
 - **Parameters**: Log main input parameters using `logger.append_param`.
 - **Exceptions**: Always catch and log using `logger.log_error`.
 
-## 6. Procedure Template
+## 6. Documentation Tags
+
+Every procedure and function in the package body should include a JavaDoc-style comment block with the following tags:
+
+| Tag | Required | Description |
+|---|---|---|
+| `@example` | Yes | A runnable call example so the developer validates the code at least once |
+| `@issue` | Yes | The ticket or issue number from the project tracker (Jira, GitHub Issues, Azure DevOps, etc.). Add a new `@issue` line for each subsequent ticket that modifies the procedure |
+| `@author` | Yes | Developer name and role |
+| `@created` | Yes | Creation date |
+| `@param` | Yes | One per parameter, with a short description |
+| `@return` | Functions only | Return type and description |
+| `@input` | AJAX only | APEX global variables read by the procedure (`g_x01`, `g_x02`, etc.) |
+
+> When a procedure is modified under a new ticket, append a new `@issue` line rather than replacing the original. This preserves the full change history directly in the source code.
+
+## 7. Procedure Template
 
 ```plsql
 /**
  * Short description of procedure.
  *
- * Example: (This force the developer to run at least once the procedure)
+ * @example
  * procedure_name(
- *   p_value => 'Value'
- * , o_error_message => null
+ *     p_value => 'Value'
+ *   , o_error_message => null
  * );
  *
- * @author Angel Flores (Consultant)
+ * @issue   TF-101
+ * @issue   TF-118 Added validation for duplicate names
+ *
+ * @author  Angel Flores (Consultant)
  * @created March 09, 2026
+ *
  * @param p_value Description
  * @param o_error_message Output error
  * @param io_error In/Out error state
@@ -159,20 +183,23 @@ exception
 end procedure_name;
 ```
 
-## 7. Function Template
+## 8. Function Template
 
 ```plsql
 /**
  * Short description of function.
  *
  * @example
+ * l_result := function_name(
+ *     p_value => 'Value'
+ * );
  *
- * @issue
+ * @issue   TF-95
  *
- * @author Angel Flores (Consultant)
+ * @author  Angel Flores (Consultant)
  * @created March 09, 2026
  *
- * @param p_value Description of input
+ * @param  p_value  Description of input
  * @return varchar2 Description of return value
  */
 function function_name(
@@ -200,7 +227,7 @@ exception
 end function_name;
 ```
 
-## 8. Conditional Compilation for Verbose Logging
+## 9. Conditional Compilation for Verbose Logging
 
 Use conditional compilation flags to enable verbose debug logging without incurring a runtime cost in production. Default is **off**. See [Jorge Rimblas](https://rimblas.com/blog/2020/05/debugging-logger-conditional-compilation/) for background.
 

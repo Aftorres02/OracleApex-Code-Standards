@@ -1,6 +1,6 @@
 # Code Review Guidelines
 
-Code reviews are a critical part of our development lifecycle. All code MUST be reviewed before merging to the main branch.
+Code reviews are a critical part of our development lifecycle. All code should be reviewed before merging to the main branch.
 
 ## 1. Reviewer Expectations
 
@@ -10,7 +10,7 @@ Code reviews are a critical part of our development lifecycle. All code MUST be 
 4. **Security:** Verify `dbms_assert` is used for dynamic objects and bind variables are properly utilized.
 5. **APEX Process Conditions:** Validate that **all** APEX processes in the Processing section have a Server-side Condition (button or `REQUEST IN ()`). A process without a condition is a blocking review finding.
 6. **Column Aliases:** Ensure select statements use named aliases for every column, especially in joins.
-7. **No HTML in SQL:** Verify that report queries return clean data and do not embed HTML tags. Rendering should be handled via APEX Template Directives.
+7. **No HTML in SQL:** Verify that report queries return clean data and avoid embedding HTML tags. Rendering should be handled via APEX Template Directives.
 8. **Packages Only:** Confirm there are no standalone procedures or functions; all logic must be in a package.
 9. **`%type` Usage:** Prefer `table.column%type` over hardcoded data types in PL/SQL variable declarations and parameters.
 

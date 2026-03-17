@@ -35,10 +35,10 @@ Name the alias for every column in your select statements. This makes the query 
 **GOOD**:
 
 ```sql
-select c.customer_id    as customer_id
-     , c.customer_name  as customer_name
-     , o.order_date     as last_order_date
-     , o.total_amount   as order_total
+select c.customer_id        as customer_id
+     , c.customer_name      as customer_name
+     , o.order_date         as last_order_date
+     , o.total_amount       as order_total
   from tf_customers          c
   join tf_orders             o on o.customer_id = c.customer_id
  where c.active_yn = 'Y';
@@ -124,7 +124,7 @@ select apex_item.checkbox2(p_idx => 1, p_value => s.segment_num) as copy_segment
 
 ## 2. Avoid Cursors — Use FOR Loop Queries
 
-Do not declare explicit cursors with `open`, `fetch`, `close`. Instead, use implicit cursor `for` loops which are cleaner, less error-prone, and automatically handle resource cleanup.
+Prefer implicit cursor `for` loops over explicit cursors with `open`, `fetch`, `close`. They are cleaner, less error-prone, and automatically handle resource cleanup.
 
 **GOOD**:
 

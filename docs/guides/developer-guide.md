@@ -29,10 +29,16 @@ Read through our comprehensive standards:
 - [APEX Specifics](../coding-standards/apex/apex.md) — Error handling, AJAX, process conditions, LOV, DML forms.
 - [APEX Page Standards](../coding-standards/apex/page-standards.md) — Page numbering, regions, buttons.
 
-**Browser Layer (UI/UX)**:
+**JavaScript Layer**:
 
-- [JavaScript](../coding-standards/ui-ux/javascript.md)
-- [CSS](../coding-standards/ui-ux/css.md)
+- [General Standards](../coding-standards/javascript/general.md) — Naming, formatting, JSDoc, file headers.
+- [Module Pattern](../coding-standards/javascript/modules.md) — Revealing Module Pattern, namespace, CONFIG, logger, public API.
+- [AJAX & Server Communication](../coding-standards/javascript/ajax.md) — `apex.server.process`, callbacks, error handling.
+- [DOM & Event Handling](../coding-standards/javascript/dom-events.md) — Event delegation, DOM queries, APEX items, dialogs.
+
+**CSS / UI**:
+
+- [CSS](../coding-standards/ui-ux/css.md) — Custom class naming, Universal Theme best practices.
 
 ## 4. Pull Request Workflow
 

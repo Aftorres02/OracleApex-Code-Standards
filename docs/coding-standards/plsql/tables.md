@@ -157,7 +157,7 @@ end tf_tickets_compound_trg;
 /
 ```
 
-> **Note on Soft-Deletes**: When performing a soft-delete (e.g. `update ... set active_yn = 'N'`), do **not** set `last_updated_by` or `last_updated_on` in your application code. The compound trigger will maintain them automatically.
+> **Note on Soft-Deletes**: When performing a soft-delete (e.g. `update ... set active_yn = 'N'`), there is no need to set `last_updated_by` or `last_updated_on` in your application code. The compound trigger maintains them automatically.
 
 ## 7. Table Comments (Documentation)
 
