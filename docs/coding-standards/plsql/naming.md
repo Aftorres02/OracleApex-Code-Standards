@@ -51,16 +51,18 @@ Use standard prefixes to distinguish variable scope and type.
 
 **GOOD**:
 
+> **IN Column rule (§3.1 of Package Standards):** pad parameter names with spaces so the `i` of `in`/`out`/`in out` starts at **column 45** on every line of the same signature.
+
 ```plsql
 procedure get_ticket_info(
-    p_ticket_id                        in number
-  , o_status                           out varchar2
-  , io_error                           in out varchar2
+    p_ticket_id                                          in  number
+  , o_status                                            out varchar2
+  , io_error                                             in out varchar2
 ) is
   l_count number;
 begin
   -- ... logic here
-null;
+  null;
 end;
 ```
 

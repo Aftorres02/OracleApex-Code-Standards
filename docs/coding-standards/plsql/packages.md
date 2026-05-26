@@ -13,7 +13,7 @@ create or replace package body tf_tickets_api
 as
 
   procedure create_ticket(
-      p_description in varchar2
+      p_description                           in varchar2
   )
   is
   begin
@@ -61,8 +61,8 @@ Prefer anchored declarations (`table.column%type`) over hardcoded data types lik
 
 ```plsql
 procedure update_ticket(
-    p_ticket_id   in tf_tickets.ticket_id%type
-  , p_description in tf_tickets.description%type
+    p_ticket_id                             in tf_tickets.ticket_id%type
+  , p_description                           in tf_tickets.description%type
 )
 is
   l_status tf_tickets.status%type;
@@ -90,6 +90,45 @@ begin
     from tf_tickets
    where ticket_id = p_ticket_id;
 end update_ticket;
+```
+
+## 3.1. Parameter Lists: Align the `in` Keyword (IN Column)
+
+In every procedure and function signature, pad the space between the parameter name and the keyword **`in`** so that **`in` begins at the same column on every line** in that parameter list.
+
+- **Default IN column**: the `i` of `in` starts at **column 45** (1-based, counting from the start of the line).
+- If a parameter name is so long it would cross column 45, extend the IN column for the **entire** signature (pick the next reasonable column and align all parameters to it).
+- Use **spaces only** between the name and `in` — never tabs.
+- This rule applies to both **`in`**, **`out`**, and **`in out`** parameters.
+
+**GOOD** (IN column fixed at 45):
+
+```plsql
+procedure merge_client_prefs(
+    p_client_id                             in tf_clients.client_id%type
+  , p_pref_name                             in tf_logger_prefs.pref_name%type
+  , p_pref_value                            in tf_logger_prefs.pref_value%type
+)
+```
+
+**GOOD** (mixed IN / OUT / IN OUT — all aligned to the same column):
+
+```plsql
+procedure get_ticket_info(
+    p_ticket_id                             in  tf_tickets.ticket_id%type
+  , o_status                               out varchar2
+  , io_error                               in out varchar2
+)
+```
+
+**BAD** (`in` hugs the parameter name — breaks alignment when name lengths vary):
+
+```plsql
+procedure merge_client_prefs(
+    p_client_id   in tf_clients.client_id%type
+  , p_pref_name   in tf_logger_prefs.pref_name%type
+  , p_pref_value  in tf_logger_prefs.pref_value%type
+)
 ```
 
 ## 4. Procedure / Function Calls
@@ -162,9 +201,9 @@ Every procedure and function in the package body should include a JavaDoc-style 
  * @param io_error In/Out error state
  */
 procedure procedure_name(
-    p_value                                   in varchar2
-  , o_error_message                           out varchar2
-  , io_error                                  in out varchar2
+    p_value                                 in varchar2
+  , o_error_message                         out varchar2
+  , io_error                                in out varchar2
 )
 is
   l_scope  logger_logs.scope%type := gc_scope_prefix || 'procedure_name';
@@ -177,7 +216,7 @@ begin
 
   logger.log('END', l_scope, null, l_params);
 exception
-  when OTHERS then
+  when others then
     logger.log_error('Unhandled Exception', l_scope, null, l_params);
     raise;
 end procedure_name;
@@ -203,7 +242,7 @@ end procedure_name;
  * @return varchar2 Description of return value
  */
 function function_name(
-    p_value                                   in varchar2
+    p_value                                 in varchar2
 )
 return varchar2
 is
@@ -246,7 +285,7 @@ alter package tf_tickets_api compile body;
 
 ```plsql
 procedure calculate_totals(
-    p_invoice_id in tf_invoices.invoice_id%type
+    p_invoice_id                            in tf_invoices.invoice_id%type
 )
 is
   l_scope  logger_logs.scope%type := gc_scope_prefix || 'calculate_totals';
