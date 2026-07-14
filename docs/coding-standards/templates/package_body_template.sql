@@ -1,7 +1,10 @@
-create or replace package body tf_<module>_api
+-- Implements: .claude/rules/plsql-standards.md (package body spacing, parameter alignment, logging, doc tags)
+create or replace package body prefix_<module>_api
 as
 
   gc_scope_prefix constant varchar2(31) := lower($$plsql_unit) || '.';
+
+
 
 
 
@@ -15,10 +18,17 @@ as
    * <Short description of procedure.>
    *
    * @example
-   * tf_<module>_api.create_<entity>(
-   *     p_<column_1> => 'Value'
-   *   , o_error_message => null
-   * );
+   * set serveroutput on
+   * declare
+   *   l_error_message varchar2(4000 char);
+   * begin
+   *   prefix_<module>_api.create_<entity>(
+   *     p_<column_1>                           => 'Value'
+   *   , o_error_message                        => l_error_message
+   *   );
+   *   dbms_output.put_line('o_error_message=' || l_error_message);
+   * end;
+   * /
    *
    * @issue   TF-101
    * @issue   TF-118 Added validation for duplicate names
@@ -30,7 +40,7 @@ as
    * @param o_error_message Output error message
    */
   procedure create_<entity>(
-      p_<column_1>                              in tf_<table_name>.<column_1>%type
+      p_<column_1>                              in prefix_<table_name>.<column_1>%type
     , o_error_message                           out varchar2
   )
   is
@@ -41,7 +51,7 @@ as
     logger.log('START', l_scope, null, l_params);
 
     insert
-      into tf_<table_name> (
+      into prefix_<table_name> (
            <column_1>
     )
     values (
@@ -60,6 +70,8 @@ as
 
 
 
+
+
   -- ===========================================================================
   -- FUNCTION: get_<entity>_name
   -- ===========================================================================
@@ -67,7 +79,7 @@ as
    * <Short description of function.>
    *
    * @example
-   * l_result := tf_<module>_api.get_<entity>_name(
+   * l_result := prefix_<module>_api.get_<entity>_name(
    *     p_<entity>_id => 1
    * );
    *
@@ -80,20 +92,20 @@ as
    * @return varchar2       The name of the entity
    */
   function get_<entity>_name(
-      p_<entity>_id                             in tf_<table_name>.<table_name>_id%type
+      p_<entity>_id                             in prefix_<table_name>.<table_name>_id%type
   )
   return varchar2
   is
     l_scope        logger_logs.scope%type := gc_scope_prefix || 'get_<entity>_name';
     l_params       logger.tab_param;
-    l_return_value tf_<table_name>.<column_1>%type;
+    l_return_value prefix_<table_name>.<column_1>%type;
   begin
     logger.append_param(l_params, 'p_<entity>_id', p_<entity>_id);
     logger.log('START', l_scope, null, l_params);
 
     select <column_1>
       into l_return_value
-      from tf_<table_name>
+      from prefix_<table_name>
      where <table_name>_id = p_<entity>_id
        and active_yn = 'Y';
 
@@ -121,7 +133,7 @@ as
    * <Short description of AJAX procedure.>
    *
    * @example
-   * tf_<module>_api.<action>_<entity>_ajax;
+   * prefix_<module>_api.<action>_<entity>_ajax;
    *
    * @issue   TF-130
    *
@@ -136,14 +148,14 @@ as
     l_scope       logger_logs.scope%type := gc_scope_prefix || '<action>_<entity>_ajax';
     l_params      logger.tab_param;
 
-    l_<entity>_id tf_<table_name>.<table_name>_id%type := apex_application.g_x01;
-    l_<column_1>  tf_<table_name>.<column_1>%type      := apex_application.g_x02;
+    l_<entity>_id prefix_<table_name>.<table_name>_id%type := apex_application.g_x01;
+    l_<column_1>  prefix_<table_name>.<column_1>%type      := apex_application.g_x02;
   begin
     logger.append_param(l_params, 'l_<entity>_id', l_<entity>_id);
     logger.append_param(l_params, 'l_<column_1>', l_<column_1>);
     logger.log('START', l_scope, null, l_params);
 
-    update tf_<table_name>
+    update prefix_<table_name>
        set <column_1> = l_<column_1>
      where <table_name>_id = l_<entity>_id;
 
@@ -163,5 +175,5 @@ as
   end <action>_<entity>_ajax;
 
 
-end tf_<module>_api;
+end prefix_<module>_api;
 /

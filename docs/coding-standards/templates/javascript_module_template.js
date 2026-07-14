@@ -1,3 +1,4 @@
+// Implements: .claude/rules/javascript-standards.md (module pattern, naming, JSDoc, file header)
 /*
  * ==========================================================================
  * <MODULE DISPLAY NAME>

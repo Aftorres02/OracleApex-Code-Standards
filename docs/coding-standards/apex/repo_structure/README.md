@@ -10,7 +10,7 @@ The core components of the repository structure are logically broken down by the
 - **`data/`**: Stores re-runnable data scripts, most commonly used for populating List of Values (LOV) / lookup tables.
 - **`lib/`**: Contains 3rd party database libraries or utilities needed for the project.
 - **`packages/`**: Stores `PL/SQL` package specifications (`.pks`) and bodies (`.pkb`). Ensure all packages follow the logging standards.
-- **`release/`**: Contains the versioned release manifests and files used to govern the roll-out of database and APEX changes. See [Release README](release/README.md) for strategy details.
+- **`release/`**: Contains the versioned release manifests and files used to govern the roll-out of database and APEX changes. See [Release README](../../../../.claude/skills/release-process/SKILL.md) for strategy details.
 - **`scripts/`**: Houses utility execution scripts (e.g., standard scripts to disable an application during deployment, install APEX apps, etc.).
 - **`synonyms/`**: Stores scripts for creating synonyms.
 - **`triggers/`**: Stores all database triggers.

@@ -1,14 +1,15 @@
+-- Implements: .claude/rules/ddl-conventions.md (trigger patterns / audit automation)
 -- =============================================================================
--- Trigger: tf_<table_name>_compound_trg
+-- Trigger: prefix_<table_name>_compound_trg
 -- Purpose: Automatically maintains audit columns (last_updated_by,
---          last_updated_on) on every update to tf_<table_name>.
+--          last_updated_on) on every update to prefix_<table_name>.
 --
 -- @author  <Author Name> (<Role>)
 -- @created <Month DD, YYYY>
 -- @ticket  <TICKET-NUMBER>
 -- =============================================================================
-create or replace trigger tf_<table_name>_compound_trg
-for insert or update on tf_<table_name>
+create or replace trigger prefix_<table_name>_compound_trg
+for insert or update on prefix_<table_name>
 compound trigger
 
   before each row is
@@ -23,5 +24,5 @@ compound trigger
     end if;
   end before each row;
 
-end tf_<table_name>_compound_trg;
+end prefix_<table_name>_compound_trg;
 /

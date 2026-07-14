@@ -1,3 +1,4 @@
+-- Implements: .claude/rules/ddl-conventions.md (table naming, audit columns, DDL file structure)
 -- =============================================================================
 -- Table:   <prefix>_<entity_name_plural>
 -- Purpose: <Short description of the table.>
