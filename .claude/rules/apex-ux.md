@@ -14,7 +14,7 @@ naming, CSS/theming) — independent of the underlying SQL/PL/SQL.
 
 Use the `apex_error` API instead of raw PL/SQL exceptions to show messages to APEX users.
 
-> Some exceptions cannot be handled directly by APEX — in those cases `raise_application_error` is appropriate. See also `security.md` for guidance on not leaking raw exception text to end users.
+> Some exceptions cannot be handled directly by APEX — in those cases `raise_application_error` is appropriate. See also `security.md` for guidance on not leaking raw exception text to end users, and `error-handling.md` for the full layer-separation rule (business packages never call `apex_error.add_error` directly).
 
 **GOOD**:
 ```plsql

@@ -16,6 +16,7 @@ in `sql-format.md`; package/procedure standards live in `plsql-standards.md`.
 - **Project prefix**: all core architectural objects (tables, views, packages) begin with the approved project prefix (e.g. `prefix_`).
   - Tables: plural (e.g. `prefix_tickets`)
   - Views: plural + `_vw` suffix (e.g. `prefix_tickets_vw`)
+- **Boolean flags**: columns storing a `'Y'`/`'N'` value use a `_yn` suffix (e.g. `active_yn`, `is_custom_yn`). Do not use `_yn` for numeric or date columns. See `plsql-standards.md` §1 for the equivalent convention on PL/SQL parameters and variables (e.g. `p_require_mfa_yn`).
 - **Constraints** always use prefixes:
 
 | Prefix | Type | Pattern |

@@ -23,6 +23,23 @@ lives in `sql-format.md`; table/DDL conventions live in `ddl-conventions.md`.
 | `l_cursor` | Cursors (avoid explicit cursors — see `sql-format.md` §7) | `l_cursor` |
 | `l_{context}_rec` | Records | `l_ticket_rec` |
 
+**Boolean (Y/N) naming**: parameters and variables that hold a `'Y'`/`'N'` flag combine their normal scope prefix with a `_yn` suffix. Do not use `_yn` for anything that isn't a Y/N-valued flag (not for numbers, dates, or free text). This mirrors the column-naming convention in `ddl-conventions.md` §1.
+
+**GOOD**:
+```plsql
+procedure enforce_login_policy(
+    p_user_id                                 in prefix_users.user_id%type
+  , p_require_mfa_yn                          in varchar2
+)
+is
+  l_is_valid_yn varchar2(1 char);
+begin
+  ...
+end enforce_login_policy;
+```
+
+**BAD**: `p_require_mfa in varchar2` — no `_yn` suffix, so it isn't obvious this is a Y/N flag rather than free text.
+
 ## 2. Always Use Packages
 
 Never build standalone functions/procedures. All logic lives in a package — namespace isolation, overloading support, organized schema.
@@ -82,8 +99,8 @@ Prefer anchored declarations (`table.column%type`) over hardcoded datatypes so c
 **GOOD**:
 ```plsql
 procedure update_ticket(
-      p_ticket_id                             in prefix_tickets.ticket_id%type
-    , p_description                           in prefix_tickets.description%type
+    p_ticket_id                             in prefix_tickets.ticket_id%type
+  , p_description                           in prefix_tickets.description%type
 )
 is
   l_status prefix_tickets.status%type;
@@ -99,16 +116,16 @@ end update_ticket;
 
 When a signature spans multiple lines with leading commas:
 
-1. **Parameter name column**: pad the first parameter line so every identifier starts in the same column as continuation lines (as if the first line also had `, ` before the name). With a 4-space base indent, continuation lines look like `    , p_foo`; the first line uses 6 spaces before `p_foo`.
+1. **Parameter name column**: pad the first parameter line so every identifier starts in the same column as continuation lines (as if the first line also had `, ` before the name). The base is the indent of the `procedure`/`function`/call line itself: continuation lines use `<base> + 2` spaces before the leading comma; the first parameter line uses `<base> + 4` spaces (2 more, to simulate the leading `, `). E.g. a procedure declared at column 1 (no enclosing indent) uses `  , p_foo` (2 spaces) on continuations and 4 spaces on the first line; one nested inside `package ... as` (2-space indent) uses `    , p_foo` (4 spaces) on continuations and 6 spaces on the first line.
 2. **IN column**: pad so `in`/`out`/`in out` starts in the same vertical column on every line. **Project default: the `i` of `in` begins at column 49** (1-based). Widen the column for the entire signature if a name would cross it.
 3. **Calls too**: the same leading-comma simulation applies to multi-line procedure/function calls — pad the first actual parameter, keep `=>` in one column.
 
 **GOOD**:
 ```plsql
 procedure validate_draft_milestone(
-      p_project_milestone_id                    in cwms_project_milestones.project_milestone_id%type
-    , p_baseline_type_rc_id                     in cwms_project_milestones.draft_baseline_type_rc_id%type
-    , p_baseline_year                           in cwms_project_milestones.draft_baseline_year%type
+    p_project_milestone_id                      in cwms_project_milestones.project_milestone_id%type
+  , p_baseline_type_rc_id                       in cwms_project_milestones.draft_baseline_type_rc_id%type
+  , p_baseline_year                             in cwms_project_milestones.draft_baseline_year%type
 )
 ```
 
@@ -123,9 +140,9 @@ procedure validate_draft_milestone(
 **GOOD**:
 ```plsql
 procedure_name(
-      p_param_one                     => 'Value'
-    , p_param_two                     => 'Value Two'
-    , p_param_three                   => 'Value Three'
+    p_param_one                     => 'Value'
+  , p_param_two                     => 'Value Two'
+  , p_param_three                   => 'Value Three'
 );
 ```
 

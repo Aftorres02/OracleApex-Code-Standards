@@ -27,7 +27,7 @@ execute immediate 'select count(*) from ' || p_table || ' where id = ' || p_id;
 
 ## 2. Don't Leak Internal Errors to End Users
 
-Do not expose raw exception text, stack traces, or `sqlerrm` details directly to APEX end users. Use the `apex_error` API / sanitized JSON error responses instead — see `apex-ux.md` §1–2 for the exact pattern (`apex_error.add_error`, AJAX `{"success": false, "message": ...}` responses).
+Do not expose raw exception text, stack traces, or `sqlerrm` details directly to APEX end users. Use the `apex_error` API / sanitized JSON error responses instead — see `apex-ux.md` §1–2 for the exact pattern (`apex_error.add_error`, AJAX `{"success": false, "message": ...}` responses). See `error-handling.md` for which layer is allowed to call `apex_error.add_error` in the first place.
 
 ## 3. Review Checklist Pointer
 

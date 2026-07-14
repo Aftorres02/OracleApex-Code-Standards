@@ -74,7 +74,7 @@ JavaScript, git workflow, and repo structure. Each file owns exactly one
 concern so agents/commands can cite the narrowest relevant rule instead of
 one giant standards document.
 
-**Current files (8):**
+**Current files (10):**
 
 | File | Covers |
 |---|---|
@@ -86,6 +86,8 @@ one giant standards document.
 | `javascript-standards.md` | Module pattern, naming, AJAX, DOM/event handling |
 | `git-workflow.md` | Branch naming, compilation code, PR/code-review checklist |
 | `repo-structure.md` | Generated-project repo layout, release process pointer, APEX export strategy |
+| `documentation-formatting.md` | Markdown conventions for standalone docs — headings, lists, dividers, callouts |
+| `error-handling.md` | Layer separation between `raise_application_error` (business packages) and `apex_error.add_error` (APEX layer) |
 
 **When Claude Code reads it:** Always — every file here is imported by root
 `CLAUDE.md`, so all of it is in context for every session.

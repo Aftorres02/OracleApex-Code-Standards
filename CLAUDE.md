@@ -19,6 +19,8 @@ directory is organized (rules vs. agents vs. commands vs. skills vs. hooks).
 @.claude/rules/javascript-standards.md
 @.claude/rules/git-workflow.md
 @.claude/rules/repo-structure.md
+@.claude/rules/documentation-formatting.md
+@.claude/rules/error-handling.md
 
 ## Other configuration
 
