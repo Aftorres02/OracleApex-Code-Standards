@@ -1,9 +1,11 @@
-# Consuming This Repo
+# Consuming This Repo — Tech Lead / Maintainer Guide
 
-A practical, command-first guide for adding this coding-standards package
-to a new or existing project. Written for a developer or tech lead doing
-this for the first time, on their own machine, against a real project
-repo.
+For whoever adds this coding-standards package to a project for the first
+time, and for whoever is responsible for pulling in standards updates
+afterward. If you're a developer joining a project that already has this
+set up, see
+[`consuming-this-repo-dev.md`](consuming-this-repo-dev.md) instead — you
+don't need anything on this page.
 
 ## 1. Add this repo as a submodule (first time only)
 
@@ -30,18 +32,18 @@ explicitly (replace `main` with whatever branch this package uses, e.g.
 git config -f .gitmodules submodule.claude.branch main
 ```
 
-## 3. Bootstrap the two template files
+## 3. Bootstrap the project's root CLAUDE.md
 
 ```bash
 # copy the CLAUDE.md template to your project ROOT (not inside .claude/)
 cp .claude/CLAUDE.md.template ./CLAUDE.md
-
-# copy the local settings template inside .claude/
-cp .claude/settings.local.example.json .claude/settings.local.json
 ```
 
-Then open the new root `CLAUDE.md` and replace every `<PROJECT_PREFIX>`
-placeholder with your project's actual prefix.
+Open the new root `CLAUDE.md` and replace every `<PROJECT_PREFIX>`
+placeholder with your project's actual prefix. This file gets committed
+and shared with the whole team — each individual developer's own local
+`.claude/settings.local.json` setup is covered in
+[`consuming-this-repo-dev.md`](consuming-this-repo-dev.md), not here.
 
 ## 4. Commit the initial setup
 
@@ -49,6 +51,10 @@ placeholder with your project's actual prefix.
 git add .gitmodules .claude CLAUDE.md
 git commit -m "chore: add coding standards as git submodule"
 ```
+
+Once this is pushed, every other developer on the project just needs
+[`consuming-this-repo-dev.md`](consuming-this-repo-dev.md) — they don't
+repeat steps 1–4.
 
 ## 5. Updating later — pulling in newer standards
 
@@ -61,7 +67,11 @@ git add .claude
 git commit -m "chore: update coding standards submodule"
 ```
 
-## 6. Checking what version a project is currently on
+Push this like any other commit. Every developer with `submodule.recurse`
+set (see the dev guide) picks it up on their next `git pull` — no action
+needed from them.
+
+## 6. Checking what version the project is currently on
 
 ```bash
 cd .claude
@@ -83,11 +93,3 @@ cd ..
 git add .gitmodules .claude
 git commit -m "chore: point standards submodule to new remote"
 ```
-
-## 8. Common mistake to avoid
-
-Never edit files inside `.claude/` directly from a consumer project
-expecting the change to "just work" for everyone — `.claude/` there is a
-separate git repo (this one). Local edits inside it need their own
-commit+push from inside `.claude/`, then step 5's update flow in every
-other consumer project that wants that change.

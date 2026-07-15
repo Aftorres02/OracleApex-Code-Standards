@@ -5,9 +5,11 @@ This repo **is** the package — it's meant to be consumed by other
 projects as a git submodule at their own `.claude/` directory, not cloned
 and edited in place per project.
 
-> New to consuming this package? See
-> [`guides/consuming-this-repo.md`](guides/consuming-this-repo.md) for
-> step-by-step setup.
+> New to consuming this package? Two guides, by role:
+> [`guides/consuming-this-repo-dev.md`](guides/consuming-this-repo-dev.md)
+> (joining a project that already uses this) and
+> [`guides/consuming-this-repo-tech-lead.md`](guides/consuming-this-repo-tech-lead.md)
+> (setting it up / maintaining updates for a project).
 
 ## Consuming this package
 
