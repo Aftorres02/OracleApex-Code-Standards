@@ -41,6 +41,33 @@ to their own project root and renames it `CLAUDE.md`.
 
 ---
 
+## AGENTS.md.template (this package) / AGENTS.md (consumer project)
+
+**Purpose:** Tool-agnostic equivalent of `CLAUDE.md.template`, for
+developers using a different agentic coding tool (e.g. Codex CLI) that
+reads a root `AGENTS.md` by convention instead of `CLAUDE.md`. Since not
+every tool supports Claude Code's `@path` import syntax, this file uses
+plain-language "read these files" instructions instead, so it works
+regardless of tool. Neither `CLAUDE.md.template` nor `AGENTS.md.template`
+is "primary" — a consumer project can have either or both at its root,
+depending on which tool(s) its developers use.
+
+**When it's read:** Depends entirely on the specific agentic tool in use
+— exact auto-loading behavior isn't guaranteed the way Claude Code's
+`@import` is. Written so a tool (or a developer) can follow it manually
+either way.
+
+**Expected content:** Plain-language instructions to read every file
+under `.claude/rules/` before writing/reviewing code, listing each
+current `rules/*.md` file with a one-line description. That list must
+mirror the table in this document's `rules/` section below — pull from
+there, don't retype it independently, so the two never drift out of sync.
+
+**Naming convention:** Stays `AGENTS.md.template` in this package. A
+consumer copies it to their own project root and renames it `AGENTS.md`.
+
+---
+
 ## settings.json / settings.local.example.json
 
 **Purpose:** Harness-level configuration — permissions (which tools/commands

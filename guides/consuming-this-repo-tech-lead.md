@@ -45,6 +45,18 @@ and shared with the whole team — each individual developer's own local
 `.claude/settings.local.json` setup is covered in
 [`consuming-this-repo-dev.md`](consuming-this-repo-dev.md), not here.
 
+If your team uses a different agentic coding tool (e.g. Codex CLI) that
+reads `AGENTS.md` instead of `CLAUDE.md`, also run:
+
+```bash
+cp .claude/AGENTS.md.template ./AGENTS.md
+```
+
+Both files can coexist in the same project — copy whichever your tool
+needs, or both if your team uses more than one tool. Neither is
+"primary"; they're parallel entry points into the same `.claude/rules/`
+content.
+
 ## 4. Commit the initial setup
 
 ```bash

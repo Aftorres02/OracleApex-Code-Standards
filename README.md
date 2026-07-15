@@ -24,7 +24,11 @@ git submodule update --init --recursive
 
 1. Add the submodule as shown above.
 2. Copy `.claude/CLAUDE.md.template` to your project root as `CLAUDE.md`,
-   and fill in `<PROJECT_PREFIX>`.
+   and fill in `<PROJECT_PREFIX>`. If your team also uses a different
+   agentic coding tool that reads `AGENTS.md` by convention (e.g. Codex
+   CLI), also copy `.claude/AGENTS.md.template` to `./AGENTS.md` — both
+   files can coexist, each a tool-specific entry point into the same
+   `.claude/rules/` content.
 3. Copy `.claude/settings.local.example.json` to
    `.claude/settings.local.json` (gitignored — machine-specific overrides
    only; `.claude/settings.json` is the shared, committed config).

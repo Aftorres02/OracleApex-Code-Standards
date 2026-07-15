@@ -1,0 +1,40 @@
+<!-- Copy this file to your project root as AGENTS.md and adjust <PROJECT_PREFIX> before use. -->
+<!-- Tool-agnostic equivalent of CLAUDE.md.template — no @import syntax, since not every -->
+<!-- agentic coding tool supports Claude Code's import mechanism. Exact auto-loading -->
+<!-- behavior (e.g. whether your tool reads this file automatically at session start) -->
+<!-- depends on the specific tool you use. This file is written as explicit -->
+<!-- read-these-files instructions instead, so it works regardless of tool. -->
+
+# <PROJECT_PREFIX> — Oracle APEX / PL/SQL Code Standards
+
+Before writing or reviewing any code in this project, read every file
+listed below under `.claude/rules/` — this package's `rules/` folder,
+consumed as your project's `.claude/` directory via git submodule. Treat
+everything in those files as required standards for this project, not
+optional suggestions.
+
+See `.claude/STRUCTURE.md` for a full explanation of how the `.claude/`
+directory is organized (rules vs. agents vs. commands vs. skills vs.
+hooks).
+
+## Rules — read all of these before working in this repo
+
+| File | Covers |
+|---|---|
+| `.claude/rules/sql-format.md` | SELECT/INSERT/MERGE formatting, JOIN alignment, CTEs |
+| `.claude/rules/plsql-standards.md` | Package structure, `%type`, parameter/call formatting, logging, doc tags |
+| `.claude/rules/ddl-conventions.md` | Table/constraint naming, data types, audit columns, triggers, seed data |
+| `.claude/rules/apex-ux.md` | Error handling, AJAX, process conditions, page/region/button naming, CSS |
+| `.claude/rules/security.md` | SQL injection prevention, error-message exposure |
+| `.claude/rules/javascript-standards.md` | Module pattern, naming, AJAX, DOM/event handling |
+| `.claude/rules/git-workflow.md` | Branch naming, compilation code, PR/code-review checklist |
+| `.claude/rules/repo-structure.md` | Generated-project repo layout, release process pointer, APEX export strategy |
+| `.claude/rules/documentation-formatting.md` | Markdown conventions for standalone docs — headings, lists, dividers, callouts |
+| `.claude/rules/error-handling.md` | Layer separation between `raise_application_error` (business packages) and `apex_error.add_error` (APEX layer) |
+
+## Other configuration
+
+- Reviewer/generator subagents: `.claude/agents/`
+- Slash commands (if your tool supports them): `.claude/commands/`
+- Multi-step guides: `.claude/skills/`
+- Git hooks: `.claude/hooks/`
