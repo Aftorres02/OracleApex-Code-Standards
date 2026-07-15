@@ -258,7 +258,17 @@ narrative, provisioning scripts) that link out to `rules/*.md` for the
 actual standards rather than restating them.
 
 **Naming convention:** `<role>-guide.md`, e.g. `developer-guide.md`,
-`tech-lead-guide.md`.
+`tech-lead-guide.md` — except `consuming-this-repo.md`, named for its
+topic rather than a role, since it's about *bootstrapping the submodule
+itself*, not a developer/tech-lead role once already set up.
+
+**Current files (3):**
+
+| File | Covers |
+|---|---|
+| `developer-guide.md` | Developer onboarding narrative |
+| `tech-lead-guide.md` | Environment/workspace provisioning |
+| `consuming-this-repo.md` | Step-by-step: adding this package as a submodule, bootstrapping templates, updating later |
 
 ---
 
