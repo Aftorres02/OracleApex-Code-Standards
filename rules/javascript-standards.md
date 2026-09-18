@@ -272,3 +272,30 @@ Every JavaScript file starts with a header block:
 ```
 
 Use [`javascript_module_template.js`](../templates/javascript_module_template.js) as the ready-to-copy skeleton — it already encodes §3–8 and §14.
+
+## 15. Shareable Lint Config
+
+A consuming project enforces §2 (2-space indent, leading commas) and §4
+(`'use strict'`) with [`eslintrc.base.json`](../configs/eslintrc.base.json).
+Point the project's own root `.eslintrc.json` at it via `extends` instead of
+duplicating rules:
+
+```json
+{
+  "extends": "./.claude/configs/eslintrc.base.json"
+}
+```
+
+A matching [`stylelintrc.base.json`](../configs/stylelintrc.base.json) covers
+CSS formatting. It intentionally omits `selector-class-pattern` — each
+project's own DB/object prefix (see `ddl-conventions.md` §1) belongs in that
+project's own `.stylelintrc.json`:
+
+```json
+{
+  "extends": "./.claude/configs/stylelintrc.base.json",
+  "rules": {
+    "selector-class-pattern": "^<your-prefix>-[a-z0-9]+(-[a-z0-9]+)*$"
+  }
+}
+```

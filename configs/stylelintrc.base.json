@@ -1,0 +1,16 @@
+{
+  "ignoreFiles": [
+    "**/*.min.css",
+    "apex/apex_lang/**/plugins/**",
+    "apex/apex_single_file/**"
+  ],
+  "rules": {
+    "indentation": 2,
+    "color-hex-case": "lower",
+    "function-name-case": "lower",
+    "property-case": "lower",
+    "selector-type-case": "lower",
+    "value-keyword-case": "lower",
+    "selector-list-comma-newline-before": "always-multi-line"
+  }
+}
