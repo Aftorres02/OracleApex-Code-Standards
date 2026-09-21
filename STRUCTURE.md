@@ -231,7 +231,7 @@ folder. It should NOT contain single-fact style coding rules (belongs in
 **Naming convention:** One directory per skill, `skills/<skill-name>/SKILL.md`,
 kebab-case directory name matching the skill's `name:` frontmatter field.
 
-**Current skills (3):**
+**Current skills (4):**
 
 | Skill | Covers |
 |---|---|
