@@ -231,12 +231,13 @@ folder. It should NOT contain single-fact style coding rules (belongs in
 **Naming convention:** One directory per skill, `skills/<skill-name>/SKILL.md`,
 kebab-case directory name matching the skill's `name:` frontmatter field.
 
-**Current skills (2):**
+**Current skills (3):**
 
 | Skill | Covers |
 |---|---|
 | `apex-migration` | Multi-step guide for versioned APEX/DDL migrations |
 | `apex-ci-image` | Reuse/build a cached Oracle DB + APEX + utPLSQL Docker image for CI, plus lessons learned from a real deployment |
+| `sqlcl-connections` | Run SQL non-interactively via a saved SQLcl connection — checking/creating one, the `connect -name` gotcha, and a reusable `run_sql.sh` |
 
 **Example (shape only):**
 ```md
