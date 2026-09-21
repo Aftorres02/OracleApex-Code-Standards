@@ -238,6 +238,7 @@ kebab-case directory name matching the skill's `name:` frontmatter field.
 | `apex-migration` | Multi-step guide for versioned APEX/DDL migrations |
 | `apex-ci-image` | Reuse/build a cached Oracle DB + APEX + utPLSQL Docker image for CI, plus lessons learned from a real deployment |
 | `sqlcl-connections` | Run SQL non-interactively via a saved SQLcl connection — checking/creating one, the `connect -name` gotcha, and a reusable `run_sql.sh` |
+| `apexlang-lessons` | Hand-authoring Oracle APEXlang (`.apx`) apps — grammar gotchas, when to skip the orchestrated generation loop, known packaged-tooling bugs |
 
 **Example (shape only):**
 ```md

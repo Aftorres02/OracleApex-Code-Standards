@@ -42,7 +42,7 @@ git submodule update --init --recursive
 | `rules/` | The 10 coding standards, always loaded into context — SQL formatting, PL/SQL, DDL, APEX UX, security, JavaScript, git workflow, repo structure, documentation formatting, error handling |
 | `agents/` | Reviewer subagents that check code against `rules/*.md` (PL/SQL, APEX pages, SQL performance) |
 | `commands/` | Slash commands (`/new-package`, `/review-sql`, `/gen-crud-page`) that generate code or trigger a review |
-| `skills/` | Multi-step process guides — versioned APEX migrations. (Release process + full project scaffold now live in a separate repo — see `rules/repo-structure.md`.) |
+| `skills/` | Multi-step process guides — versioned APEX migrations, hand-authoring APEXlang apps. (Release process + full project scaffold now live in a separate repo — see `rules/repo-structure.md`.) |
 | `templates/` | Ready-to-copy `.sql`/`.js` skeletons that already implement the `rules/` conventions |
 | `guides/` | Human-facing onboarding narrative for developers and tech leads |
 
