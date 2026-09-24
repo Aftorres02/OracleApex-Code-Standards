@@ -16,6 +16,12 @@ warnings and suggestions, not a blocking verdict.
 
 **Depends on / referenced by:**
 - Invoked by `../commands/review-sql.md`
+- For a slow refresh/query already reported as a real problem (not a static
+  code review) — real timing against a live DB, real execution plans, a
+  mechanism-by-mechanism fix/validation discipline — see the
+  `../skills/oracle-performance-investigation/SKILL.md` skill instead. This
+  agent only looks at what's visible in the file(s) it's given; it can't
+  connect to a database.
 
 ## Your job
 
