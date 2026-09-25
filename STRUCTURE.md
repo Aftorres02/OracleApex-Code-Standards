@@ -117,7 +117,7 @@ cite the narrowest relevant rule instead of one giant standards document.
 
 | File | Covers |
 |---|---|
-| `sql-format.md` | SELECT/INSERT/MERGE formatting, JOIN alignment, CTEs |
+| `sql-format.md` | SELECT/INSERT/MERGE formatting, JOIN alignment, CTEs, optimizer hint formatting |
 | `plsql-standards.md` | Package structure, `%type`, parameter/call formatting, logging, doc tags |
 | `ddl-conventions.md` | Table/constraint naming, data types, audit columns, triggers, seed data |
 | `apex-ux.md` | Error handling, AJAX, process conditions, page/region/button naming, CSS |
@@ -231,7 +231,7 @@ folder. It should NOT contain single-fact style coding rules (belongs in
 **Naming convention:** One directory per skill, `skills/<skill-name>/SKILL.md`,
 kebab-case directory name matching the skill's `name:` frontmatter field.
 
-**Current skills (5):**
+**Current skills (6):**
 
 | Skill | Covers |
 |---|---|
@@ -240,6 +240,7 @@ kebab-case directory name matching the skill's `name:` frontmatter field.
 | `sqlcl-connections` | Run SQL non-interactively via a saved SQLcl connection — checking/creating one, the `connect -name` gotcha, and a reusable `run_sql.sh` |
 | `apexlang-lessons` | Hand-authoring Oracle APEXlang (`.apx`) apps — grammar gotchas, when to skip the orchestrated generation loop, known packaged-tooling bugs |
 | `oracle-performance-investigation` | Diagnose a slow refresh/query with real execution plans (`V$SQL_MONITOR` + `DBMS_XPLAN.DISPLAY_CURSOR`, not `EXPLAIN PLAN FOR`), the `UNPIVOT`→`UNION ALL` fan-out gotcha, and a mechanism-by-mechanism testing/cleanup discipline |
+| `oracle-optimizer-hints` | Oracle optimizer hints for any SQL/PL/SQL (packages, views, batch loads) — when a hint is justified, which one, writing it so it applies, proving it with the Hint Usage Report, delivering it via SQL Patch/SPM; full 19c–26ai catalog, ADB defaults, an APEX-specific section, and a re-runnable `validate_hints.sql` (verified on 26ai) |
 
 **Example (shape only):**
 ```md

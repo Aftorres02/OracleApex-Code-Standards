@@ -21,7 +21,7 @@ hooks).
 
 | File | Covers |
 |---|---|
-| `.claude/rules/sql-format.md` | SELECT/INSERT/MERGE formatting, JOIN alignment, CTEs |
+| `.claude/rules/sql-format.md` | SELECT/INSERT/MERGE formatting, JOIN alignment, CTEs, optimizer hint formatting |
 | `.claude/rules/plsql-standards.md` | Package structure, `%type`, parameter/call formatting, logging, doc tags |
 | `.claude/rules/ddl-conventions.md` | Table/constraint naming, data types, audit columns, triggers, seed data |
 | `.claude/rules/apex-ux.md` | Error handling, AJAX, process conditions, page/region/button naming, CSS |

@@ -22,6 +22,10 @@ warnings and suggestions, not a blocking verdict.
   `../skills/oracle-performance-investigation/SKILL.md` skill instead. This
   agent only looks at what's visible in the file(s) it's given; it can't
   connect to a database.
+- Hint verdicts and diagnosis come from `../skills/oracle-optimizer-hints/`
+  (`SKILL.md`, `hint-catalog.md`, `sql-and-plsql.md` for any SQL/PL/SQL,
+  plus `apex.md` for APEX exports) — read those files when the reviewed
+  code contains `/*+`, `--+`, or an APEX Optimizer Hint attribute
 
 ## Your job
 
@@ -33,8 +37,12 @@ the full file first.
 Check the same way `plsql-reviewer.md` checks its scope, against
 `sql-format.md`: indentation, leading commas, always-alias-columns, JOIN
 alignment, avoid-explicit-cursors, INSERT/MERGE patterns, CTE `w_` naming
-and `as`-alignment, no-inline-subselects, filter-first CTE. These are real
-rule violations, not advisory notes — report them as such.
+and `as`-alignment, no-inline-subselects, filter-first CTE, and optimizer
+hint formatting (§13 — placement, lowercase, aliases only, one alias per
+join/access hint with `leading`, `qb_name` for cross-block hints, mandatory
+`-- HINT_...` justification comment, no diagnostic/undocumented/deprecated
+hints committed — `materialize` only with `STARTS` evidence). These are real rule violations, not advisory notes —
+report them as such.
 
 ### Performance smells (advisory, not codified rules)
 
@@ -58,6 +66,48 @@ suggestions, not violations:
 - **N+1 patterns in loops**: a `for` loop issuing a `select`/DML per
   iteration where the same result could be retrieved in one set-based
   query.
+
+### Optimizer hint smells (advisory)
+
+Only when the file contains hints (`/*+`, or an APEX Optimizer Hint
+attribute in a page export). Look each hint up in
+`../skills/oracle-optimizer-hints/hint-catalog.md` and report its **Team
+use** verdict alongside anything below:
+
+- **Plan-shaping hint with no evidence**: a *Last resort* hint (`index`,
+  `full`, `leading`, `use_nl`/`use_hash`, `no_merge`, `opt_param`, ...)
+  whose justification comment names no plan / hint-report evidence —
+  suggest fixing the root cause (skill Step 3) or moving it to a SQL Plan
+  Baseline / SQL Patch (Step 7).
+- **Incomplete hint set**: a join-method hint without a `leading` that
+  covers every table of the join, or a `leading` that names only some of
+  them.
+- **Reference that can't resolve**: a hint naming a table (not its alias),
+  a schema-qualified name, an alias that belongs to a different query
+  block (e.g. a CTE/inline-view alias hinted from the outer `select`
+  without `@qb`), or — in an APEX Optimizer Hint attribute — a
+  table-level hint without `qb_name`/`@qb` (the attribute lands on APEX's
+  outer wrapper query).
+- **Direct path that can't happen**: `append`/`append_values` on a table
+  whose DDL in scope has triggers or FKs (every table built from
+  `table_template.sql` has a compound audit trigger) — silently
+  conventional; `append` with `values`, or `append_values` with a
+  subquery — silently ignored.
+- **`parallel` in interactive/APEX page SQL** (fine in batch jobs; on
+  Autonomous, APEX's LOW service has no parallelism anyway).
+- **Hints inside a view definition** — Oracle discourages them; behaviour
+  depends on whether the view merges — joined to another table, the
+  hint is discarded (see the skill's `sql-and-plsql.md`, "Hints in views
+  and CTEs").
+- **Prose or unknown words inside the hint comment**: free text, or an
+  unknown word with parentheses, silently drops every hint after it.
+- **`with function` in a subquery without `/*+ with_plsql */`** on the
+  top-level statement — `ORA-32034` at runtime (in APEX, the attribute
+  must carry `WITH_PLSQL`).
+
+Never claim a hint "works" or "is ignored" from the text alone — say the
+hint report (`+HINT_REPORT`, 19c+) on the target database is what proves
+it.
 
 ## Output format
 

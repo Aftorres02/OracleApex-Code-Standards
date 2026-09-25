@@ -55,6 +55,7 @@ Reviewer expectations — each item enforces a standard defined elsewhere; this 
 | `varchar2` columns use `char` semantics | `ddl-conventions.md` |
 | `logger.log_error` / `apex_error.add_error` used for error handling | `security.md`, `apex-ux.md` |
 | TODOs use `-- TODO_[Initials]_<MONTH-DD-YYYY>` | `sql-format.md` |
+| Committed optimizer hints have a `-- HINT_...` justification and show as used in the hint report | `sql-format.md` §13 |
 | Branch name and compilation code follow convention | §1–2 above |
 
 Developer expectations: verify the code works locally, ensure `logger.log()` instrumentation is present for new packages, fix all PR comments before re-requesting review, and confirm branch/compilation naming before opening the PR.
