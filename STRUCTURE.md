@@ -231,7 +231,7 @@ folder. It should NOT contain single-fact style coding rules (belongs in
 **Naming convention:** One directory per skill, `skills/<skill-name>/SKILL.md`,
 kebab-case directory name matching the skill's `name:` frontmatter field.
 
-**Current skills (4):**
+**Current skills (5):**
 
 | Skill | Covers |
 |---|---|
@@ -239,6 +239,7 @@ kebab-case directory name matching the skill's `name:` frontmatter field.
 | `apex-ci-image` | Reuse/build a cached Oracle DB + APEX + utPLSQL Docker image for CI, plus lessons learned from a real deployment |
 | `sqlcl-connections` | Run SQL non-interactively via a saved SQLcl connection — checking/creating one, the `connect -name` gotcha, and a reusable `run_sql.sh` |
 | `apexlang-lessons` | Hand-authoring Oracle APEXlang (`.apx`) apps — grammar gotchas, when to skip the orchestrated generation loop, known packaged-tooling bugs |
+| `oracle-performance-investigation` | Diagnose a slow refresh/query with real execution plans (`V$SQL_MONITOR` + `DBMS_XPLAN.DISPLAY_CURSOR`, not `EXPLAIN PLAN FOR`), the `UNPIVOT`→`UNION ALL` fan-out gotcha, and a mechanism-by-mechanism testing/cleanup discipline |
 
 **Example (shape only):**
 ```md
