@@ -281,3 +281,48 @@ select odf.id                                                      as id
   from w_base                        odf
   left join w_products                 p on p.order_form_id = odf.id;
 ```
+
+## 13. Optimizer Hints
+
+A hint is a **directive** the optimizer obeys whenever it is valid — and a
+last resort, not a formatting habit. Whether a hint is justified at all,
+which one to use, and how to prove it works is covered by the
+[`oracle-optimizer-hints`](../skills/oracle-optimizer-hints/SKILL.md) skill.
+This section only defines how a hint that *does* get committed must look.
+
+- **Placement**: immediately after the `select`/`insert`/`update`/`delete`/`merge` keyword of the query block it targets, on the same line. When a `select` carries a hint, the first column moves to the next line, indented 7 spaces so it lines up with the leading-comma rows below it.
+- **Lowercase**, like every other keyword. Hints are case-insensitive.
+- **Aliases only**: reference the table alias exactly as written in that query block — never the table name when it has an alias, never `schema.table`. A wrong reference is silently ignored.
+- **One alias per join/access hint**: `use_nl(c) use_nl(ol)`, not the compound `use_nl(c ol)`. Join-method hints (`use_nl`/`use_hash`/`use_merge`) always come with a `leading(...)` that lists every table of the join.
+- **Index hints by column list when possible**: `index(o (customer_id order_date))` survives index renames; an index name that doesn't exist is silently ignored.
+- **Cross-block hints use `qb_name`**: name the inner block with `qb_name(x)` and target it with `@x` — never dot-notation `view.alias`.
+- **No prose inside the hint comment** — free text (or an unknown word with parentheses) silently disables every hint after it. Explanations go in the justification comment.
+- **Justification comment is mandatory** directly above the statement, following the TODO format in §3: `-- HINT_[Initials]_<MONTH-DD-YYYY> <why> | evidence: <what proved it> | <ticket>`.
+- **Never commit diagnostic hints** (`gather_plan_statistics`, `monitor`, `no_query_transformation`), undocumented estimate hints (`cardinality`, `opt_estimate`, ...), or deprecated ones (`rule`, `ordered`, `noparallel`). The only undocumented hint allowed is `materialize`, and only with `STARTS` evidence in its justification comment. See the skill's `hint-catalog.md` for the full verdict list.
+- **Never build hint text from user input** in dynamic SQL — see `security.md` §1.
+- **Every committed hint must show as used** (no `E`/`N`/`U` marker) in the 19c+ hint report: `dbms_xplan.display_cursor(format => 'typical +hint_report')`. An unused hint is dead code — remove it. Two exceptions: `append`/`append_values` never appear in the report (prove them with `LOAD AS SELECT` in the plan), and APEX `APEX$...` pseudo hints always show as `E` by design.
+
+**GOOD**:
+```sql
+-- HINT_AFLORES_SEPTEMBER-25-2026 first_rows(25) + nested loops: the IR shows 25 of
+-- ~2M rows; all_rows plan hash-joins everything first (12s -> 0.2s) | evidence:
+-- hint report 4/4 used, A-Rows plan attached to ticket | CWMS-412
+select /*+ first_rows(25) leading(o c) use_nl(c) index(o (status order_date)) */
+       o.order_id                                          as order_id
+     , o.order_date                                        as order_date
+     , c.customer_name                                     as customer_name
+  from prefix_orders                  o
+  join prefix_customers               c on c.customer_id = o.customer_id
+ where o.status = :P10_STATUS
+ order by o.order_date desc;
+```
+
+**BAD**:
+```sql
+select /*+ INDEX(prefix_orders PREFIX_ORDERS_IX9) use_nl(o c) gather_plan_statistics */ o.order_id
+     , c.customer_name
+  from prefix_orders o
+  join prefix_customers c on c.customer_id = o.customer_id
+ where o.status = :P10_STATUS;
+```
+Table name instead of alias (unresolved), a hard-coded index name, a compound join hint with no `leading`, a diagnostic hint left in, uppercase, and no justification comment.

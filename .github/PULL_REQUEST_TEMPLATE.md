@@ -11,6 +11,7 @@
 - [ ] **Code Sectioning** (`===` and `---` comment blocks) has been applied to organize long files.
 - [ ] **Proper Error Handling** (`logger.log_error`, `apex_error.add_error`) has been securely implemented.
 - [ ] **Technical Debt & TODOs** have been properly marked with initials and dates (`-- TODO_[Initials]_<MONTH-DD-YYYY>`).
+- [ ] **Optimizer hints** (if any) have a `-- HINT_[Initials]_<MONTH-DD-YYYY>` justification comment and were verified with the hint report (`+HINT_REPORT`) — see `sql-format.md` §13.
 - [ ] **Comments are written in English**, specifically detailing business logic (what/why over how).
 - [ ] **APEX Application Export** (`.sql` or YML) correlates strictly with the changes (if the UI logic was changed).
 - [ ] **All APEX Processes** have a Server-side Condition (button or `REQUEST IN ()`).

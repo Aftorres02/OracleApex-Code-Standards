@@ -396,3 +396,9 @@ most recent long-running statement matching a target object name via
 `V$SQL_MONITOR`, then displays its real execution plan with predicates via
 `DBMS_XPLAN.DISPLAY_CURSOR`. Run the real operation first (§2), then this
 script, passing a substring of the target object's name.
+
+[`oracle-optimizer-hints`](../oracle-optimizer-hints/SKILL.md) — when a
+candidate fix is a hint (like `/*+ materialize */` in §3/§12): which hint,
+how to write it so it applies (query blocks, `qb_name`), proving it with
+the Hint Usage Report, and delivering it without code changes through a
+SQL Patch or SPM baseline.
