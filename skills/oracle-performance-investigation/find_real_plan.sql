@@ -13,7 +13,7 @@
 set linesize 200 pagesize 100
 set verify off
 
-prompt ==== Candidatos recientes que tocan &1 (mas reciente primero) ====
+prompt ==== Recent candidates touching &1 (most recent first) ====
 
 select sql_id
      , sql_exec_id
@@ -26,23 +26,23 @@ select sql_id
  order by sql_exec_start desc
  fetch first 10 rows only;
 
-prompt ==== Pegar el SQL_ID de arriba abajo, y el CHILD_NUMBER (0 si no aparece en v$sql) ====
+prompt ==== Paste the SQL_ID from above below, plus CHILD_NUMBER (0 if it doesn't show up in v$sql) ====
 
 column sql_id       new_value v_sql_id
 column child_number new_value v_child_number
 
 select sql_id, child_number
   from v$sql
- where sql_id = '&sql_id_a_usar'
+ where sql_id = '&sql_id_to_use'
  order by child_number
  fetch first 1 rows only;
 
-prompt ==== Plan real (predicados incluidos) ====
+prompt ==== Real plan (predicates included) ====
 
 select *
   from table(
     dbms_xplan.display_cursor(
-        sql_id          => '&sql_id_a_usar'
+        sql_id          => '&sql_id_to_use'
       , cursor_child_no => nvl('&v_child_number', 0)
       , format          => 'ALLSTATS LAST +COST +PREDICATE'
     )
