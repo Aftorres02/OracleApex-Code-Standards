@@ -86,6 +86,13 @@ select ticket_id
 
 **BAD**: `'<span class="u-color-success">' || status || '</span>' as status` embedded in the query.
 
+> **Note:** Template Directive syntax (`{if}`/`{endif}`, `{case}`/`{when}`/`{otherwise}`/`{endcase}`) is
+> evaluated at runtime, not by any compiler or linter — a broken directive doesn't error, it silently
+> falls back to the raw unstyled value. Verify the exact syntax against the official Oracle docs
+> (`docs.oracle.com/en/database/oracle/apex/26.1/htmdb/using-template-directives.html`) or the
+> `apexlang-lessons` skill's "Runtime-evaluated content" section before writing one, and confirm it
+> actually renders before calling the work done — never trust a planning doc's literal HTML snippet.
+
 ## 5. Select Lists (Popup LOV)
 
 When a Popup LOV item has **Display Null Value** enabled, always use the application-level substitution string `&SELECT_LABEL.` for the null display text (value: `- Select -` or the agreed label). This keeps every LOV's null prompt consistent and changeable from one place.

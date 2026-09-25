@@ -1,6 +1,6 @@
 ---
 name: apexlang-lessons
-description: Lessons learned for hand-authoring Oracle APEXlang (.apx) apps — grammar gotchas, when to skip the orchestrated generation loop, and known packaged-tooling bugs/false positives. Load before writing or reviewing .apx files.
+description: Lessons learned for hand-authoring Oracle APEXlang (.apx) apps — grammar gotchas, when to skip the orchestrated generation loop, known packaged-tooling bugs/false positives, and runtime-only gotchas like Template Directive syntax that no compiler/linter catches. Load before writing or reviewing .apx files, and before writing any htmlExpression/htmlCode/Template Directive content.
 ---
 
 # APEXlang Lessons
@@ -18,6 +18,21 @@ zero.
 > worked example apps already in a given repo) belong in that consumer
 > project's own docs, not here — this skill only covers what holds true
 > regardless of which project or workspace is being built against.
+
+**Two different authorities, don't conflate them.** The packaged
+`apexlang` skill's grammar/templates are authoritative for the DSL's
+*compile-time shape* — what `apex validate` will accept. They say
+nothing about how APEX actually *renders* a feature at runtime (Template
+Directives, JavaScript/Dynamic Action behavior, a component's real
+declarative attribute set). For that, the official Oracle APEX 26.1
+documentation is authoritative — index at
+`https://docs.oracle.com/en/database/oracle/apex/26.1/index.html`.
+Whenever a feature's real runtime behavior matters and isn't already
+nailed down by a working precedent in the target app's own `.apx` tree,
+fetch the relevant page from there before relying on memory, a packaged
+template's superficial resemblance, or a planning doc's own snippet —
+see "Runtime-evaluated content the compiler never checks" below for the
+concrete incident that made this necessary.
 
 ---
 
@@ -188,6 +203,68 @@ action limited to `sequence` and `fireOnInit`.
 > "discovered requirements sources" — not useful for an actual app build.
 > For hand-authoring, skip `workspace probe` entirely; you already know the
 > target app path and workspace name from the prompt.
+
+---
+
+## Runtime-evaluated content the compiler never checks — verify against real Oracle docs
+
+`apex validate` and `apex import` only check the *shape* of the DSL —
+`htmlExpression`, `htmlCode`, `plsqlCode`, `sqlQuery`,
+`javaScriptExpression`, and every other multiline-string field are
+**opaque text** to the compiler. A syntax error inside one of those
+strings compiles clean, imports clean, and only fails at runtime — and it
+fails *silently*: APEX falls back to the raw column/item value instead of
+erroring, so a broken Template Directive can sit through review, a clean
+`apex validate`, and even a live `apex import`, and still look completely
+fine until someone actually opens the page in a browser.
+
+**Real incident**: a ticket's own planning doc specified a Column HTML
+Expression using `{if COL='X'/}...{%elseif COL='Y'/}...{%else/}...
+{endif/}`. Implemented verbatim, it passed `apex validate`/`apex import`
+without one warning, and rendered as plain unstyled raw column text —
+`{%elseif/}` and `{%else/}` are not real APEX Template Directive tokens.
+Nothing in the compile/import pipeline could have caught this; only a
+live screenshot did.
+
+**The actual, confirmed Template Directive grammar** (verified against
+Oracle's own packaged page-example templates under `templates/page-
+examples/**`, which are the only in-repo ground truth for *runtime*
+behavior — the `.ebnf` grammar only governs the DSL's compile-time
+shape, not what's valid inside these opaque strings):
+
+- Single test, no alternative branch: `{if EXPR/} ... {endif/}`, negated
+  with `{if !EXPR/} ... {endif/}`. `EXPR` is a bare item/column name used
+  as a truthy/falsy test (non-null, non-zero) — no `=`, `>`, or any other
+  inline comparison operator appears anywhere in the packaged templates.
+  Prefer two separate `{if EXPR/}` / `{if !EXPR/}` blocks over guessing
+  at a comparison operator's syntax.
+- Multi-way exact match: `{case COL/} {when VALUE/} ... {when VALUE/}
+  ... {otherwise/} ... {endcase/}` — `VALUE` is bare, no quotes, matched
+  by equality. This is what an `{if}/{elsif}/{else}/{endif}` ladder
+  should become; no `{elsif}`/`{else}` form is demonstrated anywhere in
+  the packaged templates, so don't assume one exists without checking
+  the official doc below first.
+
+**Before writing anything into a `htmlExpression`, a Static Content
+`htmlCode`, a `javaScriptExpression`, or any other field this DSL treats
+as an opaque string** — never trust a planning doc's literal snippet,
+and don't rely on memory either:
+
+1. Check whether a working precedent for the exact same directive/
+   feature already exists elsewhere in *this* app's own `.apx` tree —
+   that beats any external reference.
+2. If not, fetch the relevant official Oracle APEX 26.1 doc page before
+   writing it, and confirm the exact syntax rather than extrapolating
+   from a similar-looking pattern. Start from the index —
+   `https://docs.oracle.com/en/database/oracle/apex/26.1/index.html` —
+   and for Template Directives specifically,
+   `https://docs.oracle.com/en/database/oracle/apex/26.1/htmdb/using-template-directives.html`.
+3. Since neither `apex validate` nor `apex import` can catch a runtime
+   rendering bug in this kind of content, "it compiled and imported"
+   proves nothing for this specific risk. Treat the work as unverified
+   until it's actually been seen rendering — ask the user for a
+   screenshot, or use a browser tool if one is available — before
+   calling it done.
 
 ---
 
