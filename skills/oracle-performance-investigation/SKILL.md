@@ -87,6 +87,24 @@ entirely (see §3). Always get the plan of the statement that *actually ran*:
 See [`find_real_plan.sql`](find_real_plan.sql) for a ready-to-run version
 of steps 2-3, parameterized by a target-object-name substring.
 
+**When the plan itself is ambiguous — e.g. a `NESTED LOOPS` where it's not
+obvious which side is driving, or the query uses adaptive plans (common
+from Oracle 12c on) where `DISPLAY_CURSOR`'s static plan for a cached
+child cursor doesn't always match line-for-line what actually executed —
+don't debate the plan shape, query the actual execution counts instead:**
+
+```sql
+select plan_line_id, plan_operation, plan_options, starts, output_rows
+  from v$sql_plan_monitor
+ where sql_id = '<sql_id>'
+ order by plan_line_id;
+```
+
+`STARTS` is how many times each plan line actually ran — unambiguous even
+when `V$SQL_PLAN_MONITOR`'s line numbering doesn't match `DISPLAY_CURSOR`'s
+`Id` column for the same statement. This is the deciding evidence for "is
+this expensive join/remote call really only running once?" (see §12).
+
 ---
 
 ## 3. UNPIVOT silently multiplies everything upstream of it
@@ -328,6 +346,46 @@ PL/SQL (e.g. inside a pipelined function) instead of keeping it as SQL:
   executable section — never inside a subprogram it calls. Split
   dedup/helper logic into a boolean-returning helper function instead, and
   keep the actual `pipe row(...)` call inline in the pipelined function.
+
+---
+
+## 12. Order of operations matters more than adding another hint
+
+Once the big win (§3) is in place, further gains usually come from
+*where* an operation sits in the pipeline, not from sprinkling more hints
+or reshuffling the SQL. Three follow-on tests on the same real MV
+established this:
+
+- **A pure structural refactor (splitting one CTE into several, one
+  responsibility each, with no new hint) is safe and plan-neutral.**
+  Separating a joined/filtered source into its own named CTE — even
+  pushing a filter that only touches that source inside it, ahead of an
+  `inner join` — is a textbook-safe rewrite (equivalent by construction)
+  and measured identically to the original. Do this kind of cleanup
+  freely; it doesn't need to earn its keep with a speed win, and it sets
+  up later hint experiments without another rewrite.
+- **A filter that can only exist after a transformation (e.g. `UNPIVOT`'s
+  own match/pivot indicator) must stay after it — don't move a join
+  upstream of it "to simplify the SQL" or to make it "run on fewer rows."**
+  Tested directly: moving a join to a remote-backed source from *after*
+  the `UNPIVOT` + that filter to *before* it produced
+  `ORA-01000: maximum open cursors exceeded` against the database link.
+  The filter was quietly doing real work — letting the optimizer resolve
+  the join once instead of once per surviving row. On paper (the join key
+  wasn't one of the pivoted columns) both orders looked equivalent by
+  relational algebra. **Verify a reordering by actually running it, not
+  just by confirming the algebra commutes** — a logically correct rewrite
+  can still make the optimizer pick a catastrophically different plan.
+- **`/*+ materialize */` only helps when it prevents genuine repeated
+  work — it is not a free "make it faster" hint to sprinkle around.** It
+  was the single biggest win of this whole investigation on the CTE that
+  got re-evaluated once per `UNION ALL` branch from `UNPIVOT` (§3). Added
+  to a *different* CTE that the optimizer was already resolving exactly
+  once (confirmed via `STARTS`, §2), it measured as pure noise — not
+  faster, not slower, just a temp segment written and read for no benefit.
+  Before reaching for this hint again, confirm via `STARTS` that the
+  thing you want to materialize is actually being re-executed; if it's
+  already `STARTS=1`, the hint has nothing to fix.
 
 ---
 
