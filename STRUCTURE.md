@@ -123,7 +123,7 @@ cite the narrowest relevant rule instead of one giant standards document.
 | `apex-ux.md` | Error handling, AJAX, process conditions, page/region/button naming, CSS |
 | `security.md` | SQL injection prevention, error-message exposure |
 | `javascript-standards.md` | Module pattern, naming, AJAX, DOM/event handling |
-| `git-workflow.md` | Branch naming, compilation code, PR/code-review checklist |
+| `git-workflow.md` | Branch naming, compilation code, PR-only workflow, merge-conflict check, PR/code-review checklist |
 | `repo-structure.md` | Generated-project repo layout, release process pointer, APEX export strategy |
 | `documentation-formatting.md` | Markdown conventions for standalone docs — headings, lists, dividers, callouts |
 | `error-handling.md` | Layer separation between `raise_application_error` (business packages) and `apex_error.add_error` (APEX layer) |

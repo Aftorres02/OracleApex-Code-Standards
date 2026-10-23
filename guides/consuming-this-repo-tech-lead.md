@@ -59,12 +59,16 @@ content.
 
 ## 4. Commit the initial setup
 
+Do steps 1–3 on a branch, then commit and open a PR — the setup reaches
+`main` the same way as any other change (see `rules/git-workflow.md` §3):
+
 ```bash
 git add .gitmodules .claude CLAUDE.md
 git commit -m "chore: add coding standards as git submodule"
+git push -u origin <TICKET>-add-coding-standards
 ```
 
-Once this is pushed, every other developer on the project just needs
+Once the PR merges, every other developer on the project just needs
 [`consuming-this-repo-dev.md`](consuming-this-repo-dev.md) — they don't
 repeat steps 1–4.
 
@@ -73,15 +77,29 @@ repeat steps 1–4.
 Whenever the standards repo changes and you want THIS project to adopt
 the update (never automatic — always a deliberate choice):
 
+Like every other change, the bump goes through a branch and a PR — never
+straight to `main` (see `rules/git-workflow.md` §3):
+
 ```bash
+git switch -c <TICKET>-update-coding-standards
 git submodule update --remote .claude
 git add .claude
 git commit -m "chore: update coding standards submodule"
+git push -u origin <TICKET>-update-coding-standards
 ```
 
-Push this like any other commit. Every developer with `submodule.recurse`
-set (see the dev guide) picks it up on their next `git pull` — no action
-needed from them.
+Before opening the PR, check that every `.claude/...` path the project
+references still exists in the new version — a renamed or removed rule,
+skill, or template breaks those links silently:
+
+```bash
+git grep -ohE '\.claude/[A-Za-z0-9_./-]+' -- ':!.claude' | sed 's/\.*$//' | sort -u \
+  | while read p; do [ -e "$p" ] || echo "MISSING $p"; done
+```
+
+Once the PR merges, every developer with `submodule.recurse` set (see the
+dev guide) picks it up on their next `git pull` — no action needed from
+them.
 
 ## 6. Checking what version the project is currently on
 

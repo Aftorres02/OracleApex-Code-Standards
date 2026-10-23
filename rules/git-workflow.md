@@ -37,6 +37,18 @@ This keeps branches, tickets, and deployed scripts traceable to each other.
 4. Open a PR and fill out `.github/pull_request_template.md`.
 5. Wait for peer review and CI/CD lint pass.
 
+**Every change reaches `main` through a branch and a PR — no exceptions.** That includes doc-only fixes, one-line changes, and submodule pointer bumps (`git submodule update --remote .claude`). Never commit or push directly to `main`.
+
+### Resolving merge conflicts
+
+When a conflict appears (typically merging `main` into a feature branch), keep both sides unless one is deliberately superseded — two PRs editing the same doc section usually both belong in the result. After committing the merge, confirm nothing from `main` was silently dropped:
+
+```bash
+git diff HEAD^2 HEAD -- <conflicted-file>
+```
+
+That diff compares the merge result with the `main` side: every `-` line is `main` content the resolution removed. Any `-` line you didn't mean to remove is a lost change — restore it before pushing.
+
 ## 4. Code Review Checklist
 
 Reviewer expectations — each item enforces a standard defined elsewhere; this list is the enforcement surface, not the source of truth:
