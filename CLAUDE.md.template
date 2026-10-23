@@ -1,8 +1,7 @@
 <!-- Copy this file to your project root as CLAUDE.md and adjust <PROJECT_PREFIX> before use. -->
 # <PROJECT_PREFIX> — Oracle APEX / PL/SQL Code Standards
 
-This file is an **index only**. It does not contain standards content itself —
-it imports the rule files that Claude Code should always load into context.
+This file is an **index only**. It does not contain standards content itself.
 Detailed standards live under `.claude/rules/` — this package's `rules/`
 folder, consumed as your project's `.claude/` directory via git submodule.
 
@@ -11,17 +10,23 @@ directory is organized (rules vs. agents vs. commands vs. skills vs. hooks).
 
 ## Rules (always loaded)
 
-@.claude/rules/sql-format.md
-@.claude/rules/plsql-standards.md
-@.claude/rules/ddl-conventions.md
-@.claude/rules/apex-ux.md
-@.claude/rules/security.md
-@.claude/rules/javascript-standards.md
-@.claude/rules/git-workflow.md
-@.claude/rules/repo-structure.md
-@.claude/rules/documentation-formatting.md
-@.claude/rules/error-handling.md
-@.claude/rules/language.md
+Claude Code loads every `.claude/rules/*.md` file automatically at session
+start, so they are listed here for reference only — deliberately **not**
+`@`-imported, which would be redundant.
+
+| File | Covers |
+|---|---|
+| `.claude/rules/sql-format.md` | SELECT/INSERT/MERGE formatting, JOIN alignment, CTEs, optimizer hint formatting |
+| `.claude/rules/plsql-standards.md` | Package structure, `%type`, parameter/call formatting, logging, doc tags |
+| `.claude/rules/ddl-conventions.md` | Table/constraint naming, data types, audit columns, triggers, seed data |
+| `.claude/rules/apex-ux.md` | Error handling, AJAX, process conditions, page/region/button naming, CSS |
+| `.claude/rules/security.md` | SQL injection prevention, error-message exposure |
+| `.claude/rules/javascript-standards.md` | Module pattern, naming, AJAX, DOM/event handling |
+| `.claude/rules/git-workflow.md` | Branch naming, compilation code, PR-only workflow, merge-conflict check, PR/code-review checklist |
+| `.claude/rules/repo-structure.md` | Generated-project repo layout, release process pointer, APEX export strategy |
+| `.claude/rules/documentation-formatting.md` | Markdown conventions for standalone docs — headings, lists, dividers, callouts |
+| `.claude/rules/error-handling.md` | Layer separation between `raise_application_error` (business packages) and `apex_error.add_error` (APEX layer) |
+| `.claude/rules/language.md` | English for identifiers, code comments, and every standards file; what may use the team's language |
 
 ## Other configuration
 
@@ -29,3 +34,9 @@ directory is organized (rules vs. agents vs. commands vs. skills vs. hooks).
 - Slash commands: `.claude/commands/`
 - Multi-step guides: `.claude/skills/`
 - Git hooks: `.claude/hooks/`
+
+## Project context
+
+<!-- Optional: project-specific notes every session should have, e.g. where the -->
+<!-- implementation plan lives or environment conventions. Coding standards do -->
+<!-- not go here — they belong in .claude/rules/. Delete this section if unused. -->

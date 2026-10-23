@@ -1,6 +1,6 @@
 <!-- Copy this file to your project root as AGENTS.md and adjust <PROJECT_PREFIX> before use. -->
-<!-- Tool-agnostic equivalent of CLAUDE.md.template — no @import syntax, since not every -->
-<!-- agentic coding tool supports Claude Code's import mechanism. Exact auto-loading -->
+<!-- Tool-agnostic counterpart of CLAUDE.md.template. Other agentic tools don't auto-load -->
+<!-- .claude/rules/ the way Claude Code does, so every rule file is listed below. Exact auto-loading -->
 <!-- behavior (e.g. whether your tool reads this file automatically at session start) -->
 <!-- depends on the specific tool you use. This file is written as explicit -->
 <!-- read-these-files instructions instead, so it works regardless of tool. -->
