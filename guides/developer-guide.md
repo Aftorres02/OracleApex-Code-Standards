@@ -16,9 +16,10 @@ All core documentation is in the `docs/` folder. The database schema and scripts
 
 Coding standards are not documented here — they live under
 [`rules/`](../rules/) (this package's `rules/` folder, consumed as your
-project's `.claude/rules/` via git submodule) and are always loaded into
-Claude Code's context via the root `CLAUDE.md` index (copied from
-[`CLAUDE.md.template`](../CLAUDE.md.template)). They're also the reference
+project's `.claude/rules/` via git submodule) and Claude Code loads them
+into context automatically from there — the root `CLAUDE.md` (copied from
+[`CLAUDE.md.template`](../CLAUDE.md.template)) is only an index and does
+not need to import them. They're also the reference
 for human code review. See [`STRUCTURE.md`](../STRUCTURE.md) for what each
 rule file covers.
 
