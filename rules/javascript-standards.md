@@ -118,6 +118,8 @@ Pass structured data as a second argument (object), not string concatenation, so
 
 Private members are declared with `var` inside the IIFE; public members are exposed via the `return` object.
 
+> **Note:** the `_` prefix is JavaScript-only. PL/SQL identifiers cannot start with `_` — see `plsql-standards.md` §3 for how private package units are named.
+
 ## 8. Public API (Return Object)
 
 Group return entries by purpose, use leading commas:
