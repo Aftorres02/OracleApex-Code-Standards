@@ -196,6 +196,60 @@ pageItem P110_STATUS (
 Setting it on an `action` block is silently wrong; leave `execution` on an
 action limited to `sequence` and `fireOnInit`.
 
+`classicReport` and `interactiveReport` columns do **not** share a schema —
+copying an interactive report's column shape into a classic report fails
+live `apex validate` (APEX 26.1.4) twice over:
+
+- A `classicReport` column with `type: hidden` does not accept a `heading`
+  block (an `interactiveReport` hidden column does take one).
+
+- No `classicReport` column accepts `source { dataType: ... }` (every
+  `interactiveReport` column requires it).
+
+Classic report — no `heading` on the hidden column, no `source` block on
+any column:
+
+```apexlang
+column COLLECTION_ID (
+    type: hidden
+    layout {
+        sequence: 10
+    }
+)
+
+column NAME (
+    type: plainText
+    heading {
+        heading: Name
+    }
+    layout {
+        sequence: 20
+    }
+)
+```
+
+Interactive report — `heading` and `source.dataType` on every column,
+hidden ones included:
+
+```apexlang
+column COLLECTION_ID (
+    type: hidden
+    heading {
+        heading: Collection Id
+    }
+    layout {
+        sequence: 10
+    }
+    source {
+        dataType: NUMBER
+    }
+)
+```
+
+The canonical `classic-report-page` template already shows the classic
+shape; the mistake comes from starting from an `interactive-report-page`
+column and not checking the difference.
+
 > **Note:** `node tools/apexctl.mjs workspace probe` resolves its discovery
 > root from the current working directory at invocation time, not from the
 > app path you pass elsewhere. Running it from inside the skill package

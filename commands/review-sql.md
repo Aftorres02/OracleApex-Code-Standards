@@ -23,6 +23,7 @@ state). Does not modify files or generate new code — see
 @../rules/apex-ux.md
 @../rules/security.md
 @../rules/error-handling.md
+@../rules/language.md
 
 ## How this command works
 

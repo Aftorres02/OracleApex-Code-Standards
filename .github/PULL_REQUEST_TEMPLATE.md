@@ -4,6 +4,7 @@
 
 ## Checklist
 
+- [ ] **Merged via PR** — never pushed straight to `main`; any merge conflict checked for lost changes (`git diff HEAD^2 HEAD -- <file>`), see `git-workflow.md` §3.
 - [ ] **Branch name** follows convention: `<TICKET-NUMBER>-<short-description>` (e.g., `NLM-21-adding-segments-to-client`).
 - [ ] **Naming conventions** match our standard (e.g., `snake_case` for DB objects, `l_`/`p_`/`g_` prefixes for variables, `table_name_id` for PKs).
 - [ ] **No `select *` executed**; all columns are explicitly defined and aliased.
@@ -12,7 +13,7 @@
 - [ ] **Proper Error Handling** (`logger.log_error`, `apex_error.add_error`) has been securely implemented.
 - [ ] **Technical Debt & TODOs** have been properly marked with initials and dates (`-- TODO_[Initials]_<MONTH-DD-YYYY>`).
 - [ ] **Optimizer hints** (if any) have a `-- HINT_[Initials]_<MONTH-DD-YYYY>` justification comment and were verified with the hint report (`+HINT_REPORT`) — see `sql-format.md` §13.
-- [ ] **Comments are written in English**, specifically detailing business logic (what/why over how).
+- [ ] **Comments are written in English**, specifically detailing business logic (what/why over how) — identifiers too, see `language.md`.
 - [ ] **APEX Application Export** (`.sql` or YML) correlates strictly with the changes (if the UI logic was changed).
 - [ ] **All APEX Processes** have a Server-side Condition (button or `REQUEST IN ()`).
 - [ ] **No HTML in SQL queries**; rendering is handled via APEX Template Directives.

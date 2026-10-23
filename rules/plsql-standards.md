@@ -69,6 +69,10 @@ end prefix_tickets_api;
 ```plsql
 gc_scope_prefix constant varchar2(31) := lower($$plsql_unit) || '.';
 ```
+- **Private units** (declared only in the body, not in the spec) are named exactly like public ones — **no leading `_`**. A PL/SQL identifier must start with a letter, so a `_`-prefixed name does not compile (`PLS-00103`). The `_` private prefix is a JavaScript convention (`javascript-standards.md` §7) and does not carry over: in PL/SQL, a unit is private because it is left out of the spec.
+
+**GOOD**: `procedure log_execution(...)` — declared in the body only.
+**BAD**: `procedure _log_execution(...)` — fails with `PLS-00103`.
 
 ## 4. Package Body Vertical Spacing
 

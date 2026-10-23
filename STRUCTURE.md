@@ -109,11 +109,12 @@ is tracked (see root `.gitignore`).
 
 **Purpose:** The source of truth for *what is and isn't allowed* in code —
 SQL formatting, PL/SQL standards, DDL conventions, APEX UX, security,
-JavaScript, git workflow, repo structure, documentation formatting, and
-error handling. Each file owns exactly one concern so agents/commands can
-cite the narrowest relevant rule instead of one giant standards document.
+JavaScript, git workflow, repo structure, documentation formatting, error
+handling, and language. Each file owns exactly one concern so
+agents/commands can cite the narrowest relevant rule instead of one giant
+standards document.
 
-**Current files (10):**
+**Current files (11):**
 
 | File | Covers |
 |---|---|
@@ -123,10 +124,11 @@ cite the narrowest relevant rule instead of one giant standards document.
 | `apex-ux.md` | Error handling, AJAX, process conditions, page/region/button naming, CSS |
 | `security.md` | SQL injection prevention, error-message exposure |
 | `javascript-standards.md` | Module pattern, naming, AJAX, DOM/event handling |
-| `git-workflow.md` | Branch naming, compilation code, PR/code-review checklist |
+| `git-workflow.md` | Branch naming, compilation code, PR-only workflow, merge-conflict check, PR/code-review checklist |
 | `repo-structure.md` | Generated-project repo layout, release process pointer, APEX export strategy |
 | `documentation-formatting.md` | Markdown conventions for standalone docs — headings, lists, dividers, callouts |
 | `error-handling.md` | Layer separation between `raise_application_error` (business packages) and `apex_error.add_error` (APEX layer) |
+| `language.md` | English for identifiers, code comments, and every standards file; what may use the team's language |
 
 **When Claude Code reads it:** Always, in the consumer project — every
 file here is imported by the consumer's `CLAUDE.md` (copied from
@@ -231,7 +233,7 @@ folder. It should NOT contain single-fact style coding rules (belongs in
 **Naming convention:** One directory per skill, `skills/<skill-name>/SKILL.md`,
 kebab-case directory name matching the skill's `name:` frontmatter field.
 
-**Current skills (6):**
+**Current skills (7):**
 
 | Skill | Covers |
 |---|---|
@@ -241,6 +243,7 @@ kebab-case directory name matching the skill's `name:` frontmatter field.
 | `apexlang-lessons` | Hand-authoring Oracle APEXlang (`.apx`) apps — grammar gotchas, when to skip the orchestrated generation loop, known packaged-tooling bugs |
 | `oracle-performance-investigation` | Diagnose a slow refresh/query with real execution plans (`V$SQL_MONITOR` + `DBMS_XPLAN.DISPLAY_CURSOR`, not `EXPLAIN PLAN FOR`), the `UNPIVOT`→`UNION ALL` fan-out gotcha, and a mechanism-by-mechanism testing/cleanup discipline |
 | `oracle-optimizer-hints` | Oracle optimizer hints for any SQL/PL/SQL (packages, views, batch loads) — when a hint is justified, which one, writing it so it applies, proving it with the Hint Usage Report, delivering it via SQL Patch/SPM; full 19c–26ai catalog, ADB defaults, an APEX-specific section, and a re-runnable `validate_hints.sql` (verified on 26ai) |
+| `apex-outbound-rest` | Calling external REST APIs from PL/SQL with `apex_web_service` — who grants the network ACL, HTTPS on Autonomous, Web Credentials passed by static ID so secrets never enter PL/SQL, the APEX session context `apex_credential` needs, and verified gotchas |
 
 **Example (shape only):**
 ```md
