@@ -15,23 +15,27 @@ Read this before adding, moving, or renaming any file here.
 **Purpose:** `CLAUDE.md.template` is the starting point for a *consumer*
 project's root `CLAUDE.md`. It does **not** load the standards: Claude
 Code loads every `.claude/rules/*.md` file automatically, and this package
-is mounted at the consumer's `.claude/`. The template points to the rest
-of the configuration and gives the project a place for its own context.
-It is intentionally an *index*, not a rulebook.
+is mounted at the consumer's `.claude/`. The template lists the rule files
+for reference, points to the rest of the configuration, and gives the
+project a place for its own context — so a new project has the full map
+the moment it copies the file. It is intentionally an *index*, not a
+rulebook.
 
 **When Claude Code reads it:** Always, in the consumer project — once
 copied to `<consumer-root>/CLAUDE.md`, it is loaded into context at the
 start of every session there, alongside the auto-loaded rules.
 
-**Expected content:** Short pointers to `.claude/agents/`,
-`.claude/commands/`, `.claude/skills/`, `.claude/hooks/`, plus optional
-project-specific context (where the implementation plan lives,
-environment conventions). **No `@.claude/rules/*.md` imports** — the rules
-already load on their own, so importing them only puts the same content
-in context twice. It should NOT contain actual coding standards, review
-checklists, or command logic — that content belongs in the files it
-points to. If you find yourself pasting rule text here, move it to
-`rules/` instead.
+**Expected content:** A reference table of every `rules/*.md` file with a
+one-line description — plain paths, **not** `@.claude/rules/*.md` imports,
+since the rules already load on their own and importing them is
+redundant. That table must mirror the one in this document's `rules/`
+section below (same as `AGENTS.md.template`'s). Then short pointers to
+`.claude/agents/`, `.claude/commands/`, `.claude/skills/`,
+`.claude/hooks/`, plus optional project-specific context (where the
+implementation plan lives, environment conventions). It should NOT
+contain actual coding standards, review checklists, or command logic —
+that content belongs in the files it points to. If you find yourself
+pasting rule text here, move it to `rules/` instead.
 
 **Naming convention:** Stays `CLAUDE.md.template` in this package (never
 rename it here — it's a template, not a live index). A consumer copies it
@@ -42,7 +46,12 @@ to their own project root and renames it `CLAUDE.md`.
 ## Rules (always loaded)
 
 Claude Code loads every `.claude/rules/*.md` file automatically at session
-start. They are deliberately **not** `@`-imported here.
+start, so they are listed here for reference only — deliberately **not**
+`@`-imported, which would be redundant.
+
+| File | Covers |
+|---|---|
+| `.claude/rules/sql-format.md` | SELECT/INSERT/MERGE formatting, JOIN alignment, ... |
 ```
 
 ---
@@ -121,6 +130,10 @@ agents/commands can cite the narrowest relevant rule instead of one giant
 standards document.
 
 **Current files (11):**
+
+> **Note:** `CLAUDE.md.template` and `AGENTS.md.template` each carry a
+> copy of this table — when a rule file is added, renamed, or re-scoped,
+> update all three together.
 
 | File | Covers |
 |---|---|

@@ -33,8 +33,8 @@ git submodule update --init --recursive
    `.claude/settings.local.json` (gitignored — machine-specific overrides
    only; `.claude/settings.json` is the shared, committed config).
 4. Open the project in Claude Code — every file under `.claude/rules/`
-   loads automatically. `CLAUDE.md` adds pointers and project context; it
-   does not need to `@`-import the rules.
+   loads automatically. `CLAUDE.md` lists them for reference and adds
+   pointers and project context; it does not `@`-import them.
 
 ## What's in this package
 
