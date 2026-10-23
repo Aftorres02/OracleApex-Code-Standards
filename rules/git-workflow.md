@@ -67,6 +67,8 @@ Reviewer expectations — each item enforces a standard defined elsewhere; this 
 | `varchar2` columns use `char` semantics | `ddl-conventions.md` |
 | `logger.log_error` / `apex_error.add_error` used for error handling | `security.md`, `apex-ux.md` |
 | TODOs use `-- TODO_[Initials]_<MONTH-DD-YYYY>` | `sql-format.md` |
+| Identifiers and comments in English | `language.md` |
+| Private package units have no leading `_` | `plsql-standards.md` |
 | Committed optimizer hints have a `-- HINT_...` justification and show as used in the hint report | `sql-format.md` §13 |
 | Branch name and compilation code follow convention | §1–2 above |
 
