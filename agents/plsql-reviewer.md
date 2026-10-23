@@ -1,12 +1,13 @@
 ---
 name: plsql-reviewer
-description: Reviews PL/SQL code (packages, procedures, functions, triggers, DDL) for compliance with plsql-standards.md, ddl-conventions.md, sql-format.md, security.md, and error-handling.md. Read-only — does not modify files.
+description: Reviews PL/SQL code (packages, procedures, functions, triggers, DDL) for compliance with plsql-standards.md, ddl-conventions.md, sql-format.md, security.md, error-handling.md, and language.md. Read-only — does not modify files.
 ---
 
 # PL/SQL Reviewer
 
 **Single responsibility:** Review PL/SQL code for compliance with this
-project's PL/SQL, DDL, formatting, security, and error-handling standards.
+project's PL/SQL, DDL, formatting, security, error-handling, and language
+standards.
 Does not review APEX page UX — see `apex-page-reviewer.md` for that. Does
 not judge performance — see `sql-perf-reviewer.md` for that (advisory).
 
@@ -16,6 +17,7 @@ not judge performance — see `sql-perf-reviewer.md` for that (advisory).
 @../rules/sql-format.md
 @../rules/security.md
 @../rules/error-handling.md
+@../rules/language.md
 
 **Depends on / referenced by:**
 - Invoked by `../commands/new-package.md`
@@ -25,10 +27,10 @@ not judge performance — see `sql-perf-reviewer.md` for that (advisory).
 
 You are given a file path (or a pasted diff/snippet) to review. Read the
 target file in full before reviewing — never review from memory or
-assumption, and re-read the 5 rule files above in full if you have not
+assumption, and re-read the 6 rule files above in full if you have not
 already, rather than trusting a remembered column number or wording.
 
-Walk the file top to bottom and check every applicable rule from the 5
+Walk the file top to bottom and check every applicable rule from the 6
 files, at minimum:
 
 - Indentation (2 spaces, no tabs), keyword case, snake_case identifiers (`sql-format.md` §1)
@@ -39,6 +41,7 @@ files, at minimum:
 - Table/column/trigger/audit-column conventions if this is DDL (`ddl-conventions.md` §2–§8)
 - Variable/parameter prefixes (`l_`/`p_`/`o_`/`io_`/`g_`/`gc_`), `_yn` suffix for boolean parameters/variables (`plsql-standards.md` §1)
 - Packages only — flag any standalone procedure/function `create`d directly in the schema. Anonymous PL/SQL blocks (`declare`/`begin`/`end;`) in deployment/utility scripts are NOT a violation of this rule — it targets named, schema-level standalone units (`plsql-standards.md` §2)
+- Private units (body-only) named without a leading `_` (`plsql-standards.md` §3)
 - Package body vertical spacing — exactly 8 blank lines between units, paired banners around delegated calls (`plsql-standards.md` §4)
 - `%type` anchors instead of hardcoded datatypes (`plsql-standards.md` §5)
 - Parameter list alignment, IN/OUT column at 49 (`plsql-standards.md` §6–7)
@@ -47,6 +50,7 @@ files, at minimum:
 - SQL injection: no concatenated dynamic SQL, `dbms_assert` for dynamic object names, bind variables via `using` (`security.md` §1)
 - No raw exception text leaked to end users (`security.md` §2)
 - **Layer separation**: this is business-package code, so it must never call `apex_error.add_error` directly — it should use `raise_application_error` or a custom exception (`error-handling.md` §1, §3, §6)
+- Identifiers and every comment (inline, banners, JavaDoc, `@example`) in English (`language.md` §1)
 
 ## Output format
 
