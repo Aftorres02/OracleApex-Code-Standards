@@ -109,11 +109,12 @@ is tracked (see root `.gitignore`).
 
 **Purpose:** The source of truth for *what is and isn't allowed* in code —
 SQL formatting, PL/SQL standards, DDL conventions, APEX UX, security,
-JavaScript, git workflow, repo structure, documentation formatting, and
-error handling. Each file owns exactly one concern so agents/commands can
-cite the narrowest relevant rule instead of one giant standards document.
+JavaScript, git workflow, repo structure, documentation formatting, error
+handling, and language. Each file owns exactly one concern so
+agents/commands can cite the narrowest relevant rule instead of one giant
+standards document.
 
-**Current files (10):**
+**Current files (11):**
 
 | File | Covers |
 |---|---|
@@ -127,6 +128,7 @@ cite the narrowest relevant rule instead of one giant standards document.
 | `repo-structure.md` | Generated-project repo layout, release process pointer, APEX export strategy |
 | `documentation-formatting.md` | Markdown conventions for standalone docs — headings, lists, dividers, callouts |
 | `error-handling.md` | Layer separation between `raise_application_error` (business packages) and `apex_error.add_error` (APEX layer) |
+| `language.md` | English for identifiers, code comments, and every standards file; what may use the team's language |
 
 **When Claude Code reads it:** Always, in the consumer project — every
 file here is imported by the consumer's `CLAUDE.md` (copied from

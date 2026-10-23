@@ -31,6 +31,7 @@ hooks).
 | `.claude/rules/repo-structure.md` | Generated-project repo layout, release process pointer, APEX export strategy |
 | `.claude/rules/documentation-formatting.md` | Markdown conventions for standalone docs — headings, lists, dividers, callouts |
 | `.claude/rules/error-handling.md` | Layer separation between `raise_application_error` (business packages) and `apex_error.add_error` (APEX layer) |
+| `.claude/rules/language.md` | English for identifiers, code comments, and every standards file; what may use the team's language |
 
 ## Other configuration
 

@@ -21,6 +21,7 @@ directory is organized (rules vs. agents vs. commands vs. skills vs. hooks).
 @.claude/rules/repo-structure.md
 @.claude/rules/documentation-formatting.md
 @.claude/rules/error-handling.md
+@.claude/rules/language.md
 
 ## Other configuration
 
