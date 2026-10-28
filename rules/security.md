@@ -29,6 +29,20 @@ execute immediate 'select count(*) from ' || p_table || ' where id = ' || p_id;
 
 Do not expose raw exception text, stack traces, or `sqlerrm` details directly to APEX end users. Use the `apex_error` API / sanitized JSON error responses instead — see `apex-ux.md` §1–2 for the exact pattern (`apex_error.add_error`, AJAX `{"success": false, "message": ...}` responses). See `error-handling.md` for which layer is allowed to call `apex_error.add_error` in the first place.
 
-## 3. Review Checklist Pointer
+## 3. Whitelist Client-Supplied Identifiers
+
+When the client says *which* column, attribute or action to touch (e.g. an AJAX callback receiving `g_x02 = 'job'`), map it through a `case` statement with one branch per allowed value and **no `else`**. Any other value raises the predefined `CASE_NOT_FOUND`, so the whitelist needs neither dynamic SQL nor a custom `-20xxx` code (see `error-handling.md` §5).
+
+**GOOD**:
+```plsql
+case lower(apex_application.g_x02)
+  when 'ename'  then l_attr_number := 1;
+  when 'job'    then l_attr_number := 2;
+end case;  -- anything else raises CASE_NOT_FOUND
+```
+
+**BAD**: `execute immediate 'update prefix_emp set ' || apex_application.g_x02 || ' = :1 ...'` — the client picks the column.
+
+## 4. Review Checklist Pointer
 
 Code review must verify `dbms_assert` is used for dynamic objects and that bind variables are used throughout (not string concatenation) — see `git-workflow.md` for the full review checklist and how it maps to each rule file.
