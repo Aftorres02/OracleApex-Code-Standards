@@ -42,6 +42,7 @@ files, at minimum:
 - Variable/parameter prefixes (`l_`/`p_`/`o_`/`io_`/`g_`/`gc_`), `_yn` suffix for boolean parameters/variables (`plsql-standards.md` §1)
 - Packages only — flag any standalone procedure/function `create`d directly in the schema. Anonymous PL/SQL blocks (`declare`/`begin`/`end;`) in deployment/utility scripts are NOT a violation of this rule — it targets named, schema-level standalone units (`plsql-standards.md` §2)
 - Private units (body-only) named without a leading `_` (`plsql-standards.md` §3)
+- APEX APIs (`apex_collection`, `apex_json`, `apex_application.g_x*`) only in APEX-layer `*_utils` packages, never in a `*_api` package (`plsql-standards.md` §3)
 - Package body vertical spacing — exactly 8 blank lines between units, paired banners around delegated calls (`plsql-standards.md` §4)
 - `%type` anchors instead of hardcoded datatypes (`plsql-standards.md` §5)
 - Parameter list alignment, IN/OUT column at 49 (`plsql-standards.md` §6–7)
@@ -49,6 +50,7 @@ files, at minimum:
 - JavaDoc tags present and correctly aligned (`plsql-standards.md` §9–11)
 - SQL injection: no concatenated dynamic SQL, `dbms_assert` for dynamic object names, bind variables via `using` (`security.md` §1)
 - No raw exception text leaked to end users (`security.md` §2)
+- Client-supplied column/attribute names mapped through a `case` whitelist with no `else`, never concatenated (`security.md` §3)
 - **Layer separation**: this is business-package code, so it must never call `apex_error.add_error` directly — it should use `raise_application_error` or a custom exception (`error-handling.md` §1, §3, §6)
 - Identifiers and every comment (inline, banners, JavaDoc, `@example`) in English (`language.md` §1)
 
