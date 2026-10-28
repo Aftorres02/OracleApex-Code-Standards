@@ -165,3 +165,30 @@ Standard action button icons use application-level substitution strings: `&CREAT
 
 - **Universal Theme first**: prefer built-in declarative options (Template Options, Theme Roller) before writing custom CSS.
 - When custom properties are unavoidable, use Oracle's exposed CSS variables (`var(--ut-...)`) to keep theme compatibility across updates.
+- **Native utility classes before custom CSS**: the Universal Theme ships layout and component classes that cover most needs, including markup inside Template Components and region HTML. Classes verified on APEX 26.1:
+
+| Need | Native classes |
+|---|---|
+| Flex layout | `u-flex`, `u-flex-direction-column`, `u-align-items-center`, `u-justify-content-*`, `u-gap-0` … `u-gap-10` |
+| Grow / equal columns | `u-flex-grow-1`, `u-flex-basis-0`, `u-flex-shrink-0` |
+| Spacing | `u-padding-*`, `u-margin-*` |
+| Hide | `u-hidden` (removed from layout), `u-invisible` (keeps its space), `u-vh` (visually hidden, still read by screen readers) |
+| Form fields outside an APEX item | `apex-item-text`, `apex-item-select`; full width with `stretch` |
+| Invalid field | `apex-page-item-error` (theme's danger border) |
+| Icon-only buttons | `t-Button t-Button--noLabel t-Button--icon`; add `t-Button--noUI` for no background |
+| Labels | `t-Form-label` |
+
+- **Equal-width columns**: put `u-flex-grow-1 u-flex-basis-0` on a wrapper `div` and `stretch` on the field inside it. Flex cannot shrink an item below its own padding, so with the classes on the fields themselves a select (wider padding for its arrow) ends up wider than the text inputs and headers no longer line up.
+
+**GOOD**:
+```html
+<div class="u-flex u-align-items-center u-gap-2">
+  <div class="u-flex-grow-1 u-flex-basis-0"><input type="text" class="apex-item-text stretch"></div>
+  <div class="u-flex-grow-1 u-flex-basis-0"><select class="apex-item-select stretch"></select></div>
+</div>
+```
+
+**BAD**: `<input class="apex-item-text u-flex-grow-1 u-flex-basis-0">` next to `<select class="apex-item-select u-flex-grow-1 u-flex-basis-0">` — the columns come out different widths.
+
+- **Verify a class against the instance's theme CSS** before relying on it — class names change between versions. Download the CSS the page actually loads (`/i/<version>/app_ui/css/Core.min.css`, `/i/<version>/themes/theme_42/<version>/css/Core.min.css`) and search it; don't rely on memory.
+- **Custom CSS only for what has no native equivalent** (e.g. a `:last-child` rule), and say in a comment why no utility class covers it.

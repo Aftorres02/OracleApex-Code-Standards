@@ -54,3 +54,12 @@ but not part of the main flow, with a bold label prefix:
 > **Note:** which function the scheme is wired to call isn't confirmed
 > from the package code alone — check the app's Authentication Scheme.
 ```
+
+## 6. Copy-Paste Deliverables
+
+Text someone will paste somewhere else — an email, a chat message, a PR
+comment, a commit message drafted for a person — goes inside a fenced code
+block, written as plain text (numbered lines and dashes, no `**bold**`).
+Rendered markdown loses its formatting or picks up stray characters when
+copied. Keep notes about the text (which files to attach, who it is for)
+outside the block.

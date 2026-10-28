@@ -65,6 +65,7 @@ end prefix_tickets_api;
 
 - Business logic packages: `*_api` (e.g. `prefix_tickets_api`)
 - Utility packages: `*_utils` (e.g. `prefix_tickets_utils`)
+- **APEX APIs stay out of `*_api` packages**: code that calls `apex_collection`, `apex_json`, `apex_application.g_x01` or any other APEX API goes in an APEX-layer `*_utils` package, which calls the `*_api` package for the actual DML. The `*_api` package stays runnable from a job, a test or SQL*Plus with no APEX session (see `error-handling.md` §2).
 - Every package body defines a scope constant for logging context:
 ```plsql
 gc_scope_prefix constant varchar2(31) := lower($$plsql_unit) || '.';

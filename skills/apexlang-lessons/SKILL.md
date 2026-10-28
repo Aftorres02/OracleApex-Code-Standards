@@ -1,6 +1,6 @@
 ---
 name: apexlang-lessons
-description: Lessons learned for hand-authoring Oracle APEXlang (.apx) apps — grammar gotchas, when to skip the orchestrated generation loop, known packaged-tooling bugs/false positives, and runtime-only gotchas like Template Directive syntax that no compiler/linter catches. Load before writing or reviewing .apx files, and before writing any htmlExpression/htmlCode/Template Directive content.
+description: Lessons learned for hand-authoring Oracle APEXlang (.apx) apps — grammar gotchas, when to skip the orchestrated generation loop, known packaged-tooling bugs/false positives, runtime-only gotchas like Template Directive syntax that no compiler/linter catches, and custom Template Component plugins (authoring syntax plus runtime behavior: pagination, refresh event, empty report). Load before writing or reviewing .apx files, and before writing any htmlExpression/htmlCode/Template Directive content.
 ---
 
 # APEXlang Lessons
@@ -68,7 +68,9 @@ needs:
 
 - `application.apx` — app-level config (auth scheme, theme, nav references)
 - `.apex/apexlang.json` — just an `mmdVersion` stamp, copy as-is
-- `deployments/default.json` — must name the target APEX workspace
+- `deployments/default.json` — must name the target APEX workspace; add
+  `"app": {"id": N}` to pin the application id (see "Known
+  packaged-tooling bugs" below)
 - `pages/p00000-global-page.apx` — can be a bare `page 0 (name: Global Page)`
 - `pages/p09999-login.apx` — required when using the default Oracle APEX
   Accounts authentication scheme; copy the scaffold version unmodified
@@ -505,6 +507,133 @@ changed — `apex.navigation.dialog()` fires that event on close.
 
 ---
 
+## Custom Template Component plugins
+
+The packaged templates cover the theme's own Template Components
+(`themeTemplateComponent/contentRow`, ...). An app-level Template
+Component plugin is authored differently, and `apex validate` rejects
+several properties the grammar file lists. Verified on APEX 26.1.5:
+
+The plugin lives in `shared-components/plugins/template-component/<pluginId>/`
+as `plugin.apx` (the plugin) plus `custom-attributes.apx` (its
+attributes). A region uses it as `appTemplateComponent/<pluginId>` — not
+`plugin/<pluginId>` (that is for region/item plugins) and not
+`themeTemplateComponent/...`:
+
+```apexlang
+region employees (
+    name: Employees
+    type: appTemplateComponent/employeeRow
+    componentAppearance {
+        display: report
+    }
+    settings {
+        name: ENAME
+    }
+)
+```
+
+The identifier after `customAttribute` becomes the attribute's Static ID,
+which is the placeholder the template uses. `customAttribute attribute_01`
+gives `#ATTRIBUTE_01#`; name it after the placeholder you want:
+
+```apexlang
+customAttribute NAME (
+    apexlangName: name
+    attribute: 1
+    name: Name
+    scope: component
+    type: sessionStateValue
+    security {
+        escapeMode: htmlAttribute
+    }
+    appearance {
+        sequence: 10
+    }
+)
+```
+
+A `sessionStateValue` attribute takes a **bare column name** in the
+region's `settings` (`name: ENAME`). Passing `&ENAME.` validates and
+imports, then renders `&"ADAMS"!RAW.` in every row. Use an `html`-type
+attribute when the value must mix text with `&COLUMN.` substitutions (the
+theme's Content Row `title` works that way).
+
+Properties live `apex validate` rejects on this build, although the grammar
+lists them:
+
+- `apexlangName` on the plugin itself, and `advanced.substituteAttributeValues`
+  (substitution still ends up enabled, `Y`).
+
+- `staticId` on a `customAttribute` — the identifier is the Static ID.
+
+- `component.standardAttributes: [ regionTemplate ]` — the valid values are
+  `regionTemplateAttr` and `rowSelection`.
+
+The report templates follow the theme's own plugins (`#APEX$ROWS#`,
+`#APEX$ROW_IDENTIFICATION#`, `#APEX$PARTIAL#`):
+
+```apexlang
+templateComponent {
+    availableAs: [
+        partial
+        report
+    ]
+    reportBody:
+        ```html
+        <div class="u-flex u-flex-direction-column u-gap-2" role="list">#APEX$ROWS#</div>
+        ```
+    reportRow:
+        ```html
+        <div role="listitem" #APEX$ROW_IDENTIFICATION#>#APEX$PARTIAL#</div>
+        ```
+    translateTemplates: false
+    defaultEscapeMode: html
+}
+```
+
+`#APEX$ROW_IDENTIFICATION#` renders `data-id="<value>"` from the region
+column marked `source { primaryKey: true }`.
+
+Static IDs on buttons and regions are set with `advanced { htmlDomId: X }`;
+`advanced.staticId` is rejected on both. Verify with
+`apex_application_page_buttons.button_static_id` after import.
+
+---
+
+## Template Component regions at runtime
+
+None of these show up in `apex validate`, `apex import`, or a server-side
+render — they only appear in a browser. Verified on APEX 26.1.5:
+
+- **Default pagination is 15 rows per page.** A report-mode Template
+  Component paginates by default and its "Next" button is easy to miss —
+  rows past 15 silently move to page 2. For a list meant to show every row
+  (an editable grid), set it explicitly:
+
+  ```apexlang
+  pagination {
+      type: page
+      entitiesPerPage: 500
+      showTotalCount: false
+  }
+  ```
+
+- **A region refresh fires `tablemodelviewpagechange`, not
+  `apexafterrefresh`.** The region is an `apexTableModelView` widget; its
+  page-change event bubbles to the region element, so listen there:
+  `$(document).on('tablemodelviewpagechange', '#<regionStaticId>', fn)`.
+
+- **An empty report renders no report body.** With zero rows the region
+  shows only the "no data found" message inside
+  `#<regionStaticId>_TemplateComponent`. JavaScript that adds lines must be
+  able to build the list container itself.
+
+For an editable list built on these regions, see the
+`apex-collection-grid` skill.
+
+---
+
 ## Compiler-truth audit: known false positives
 
 `node tools/apexctl.mjs apexlang compiler-truth audit` and the local
@@ -559,6 +688,17 @@ explicitly:
 
 ```sql
 apex import -input <path> -id <existing_application_id>
+```
+
+Better still, pin the id in `deployments/default.json` so a plain
+`apex import -input <path>` always targets the same application —
+verified on 26.1.5, every re-import replaced the app in place:
+
+```json
+{
+  "workspace": { "name": "<WORKSPACE>" },
+  "app": { "id": 610 }
+}
 ```
 
 Find the existing id first with a direct, read-only query
@@ -619,3 +759,9 @@ database back, not by trusting the tool's JSON report.
    direct, read-only query against `apex_applications` (and the specific
    component that changed) afterward — don't trust any tool's JSON report
    as proof a write happened.
+
+8. If a page uses a custom Template Component, set its pagination
+   explicitly, check the rendered placeholders (a leftover `#NAME#` or
+   `&COL.` means a wrong attribute id or mapping), and verify the page in
+   a browser — see "Template Component regions at runtime" above and the
+   `apex-runtime-verification` skill.

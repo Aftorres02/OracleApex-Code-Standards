@@ -69,6 +69,8 @@ Reviewer expectations — each item enforces a standard defined elsewhere; this 
 | TODOs use `-- TODO_[Initials]_<MONTH-DD-YYYY>` | `sql-format.md` |
 | Identifiers and comments in English | `language.md` |
 | Private package units have no leading `_` | `plsql-standards.md` |
+| APEX APIs (`apex_collection`, `apex_json`, `g_x01`) only in APEX-layer `*_utils` packages, never in `*_api` | `plsql-standards.md` §3 |
+| Client-supplied column/attribute names mapped through a `case` whitelist | `security.md` §3 |
 | Committed optimizer hints have a `-- HINT_...` justification and show as used in the hint report | `sql-format.md` §13 |
 | Branch name and compilation code follow convention | §1–2 above |
 

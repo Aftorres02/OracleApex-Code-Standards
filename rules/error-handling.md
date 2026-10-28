@@ -74,6 +74,30 @@ callback and build the JSON response there.
 Do not call `apex_error.add_error` in this path either — you're not
 rendering a page, you're returning JSON.
 
+Translate the errors a user can cause into a readable message, log the
+raw one with `apex_debug.error`, and never return `sqlerrm` (`security.md`
+§2). Roll back first, so a failed save leaves no partial changes:
+
+```plsql
+exception
+  when others then
+    rollback;
+    apex_debug.error('save_ajax failed: %s', sqlerrm);
+    apex_json.open_object;
+    apex_json.write('success', false);
+    apex_json.write(
+        'message'
+      , case sqlcode
+          when -2292 then 'An employee who manages other employees cannot be deleted.'
+          else 'The changes could not be saved.'
+        end
+    );
+    apex_json.close_object;
+```
+
+`-2292` (child record found) is a predefined Oracle error, not a custom
+code, so this needs no `-20xxx` range.
+
 ---
 
 ## 5. Error Code Ranges

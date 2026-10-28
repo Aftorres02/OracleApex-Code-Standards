@@ -182,6 +182,7 @@ apex.server.process(
 - Map `x01`, `x02`, etc. to match the PL/SQL backend's `apex_application.g_x01`, `g_x02`.
 - Always handle **both** `success` and `error`.
 - Inside `success`, always check `pData.success` — the HTTP request can succeed while server-side logic fails.
+- When calls must reach the server in the order the user made them (each edit stored as it happens, then a Save), send them through one named queue: `{ queue: { name: 'myGrid', action: 'wait' } }`. An edit fires on `change` (blur) at the same moment the user clicks Save; without the queue, Save can run first.
 
 **BAD**: `success: function(pData) { callback(pData.tickets); }` — assumes success without checking.
 

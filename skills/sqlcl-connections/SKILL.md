@@ -130,3 +130,26 @@ connection-specific and pointed straight at the connect syntax itself.
 > same command before concluding it's a stored-password problem. If both
 > fail the same way, the bug is in how you're invoking the tool, not in
 > what's stored.
+
+### Close stdin when running a script, and never call help from one
+
+`sql -name "<connection_name>" @script.sql` is a convenient one-liner
+alternative to the heredoc above, but SQLcl keeps reading stdin after the
+script ends. If the script lacks `exit`, or anything in it prompts (a
+pager, `accept`, a password), the run sits there forever and looks like a
+slow database call. Always close stdin:
+
+```
+sql -name "<connection_name>" @script.sql < /dev/null
+```
+
+`help apex` and `help apex <command>` print the full command reference
+through a pager and never finish in a non-interactive run, and
+`apex <command> -help` is not a recognized option (`'-help' ... Option not
+recognized`). Take the exact command forms from the packaged APEXlang
+tooling or the SQLcl documentation instead of calling `help` from a
+script.
+
+> **General lesson:** when a scripted SQLcl run "hangs", check for an
+> open stdin and an interactive prompt before suspecting the network or
+> the database.

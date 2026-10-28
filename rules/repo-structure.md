@@ -40,4 +40,12 @@ apex export -applicationid 100 -split -skipExportDate -expType APPLICATION_SOURC
 
 > This generates a folder structure with individual `.yml` files per component, making it easy to see exactly what changed in a pull request.
 
+To hand an app to someone else (a demo, another workspace), use the classic single-file export instead:
+
+```bash
+apex export -applicationid 100 -skipExportDate
+```
+
+The resulting `f100.sql` includes the app's plugins (Template Components included) and its static application files (JS, CSS, images). It does **not** include database objects — ship packages, tables and views as a separate script, run before the import.
+
 `<PROJECT_PREFIX>` and the actual application ID(s) for this project are project-specific — fill in before relying on this as a runnable example.
