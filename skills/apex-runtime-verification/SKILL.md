@@ -1,6 +1,6 @@
 ---
 name: apex-runtime-verification
-description: Prove an Oracle APEX page actually works, beyond "apex validate / apex import passed" — render a page server-side from SQL (including modal pages and their checksums), call AJAX callbacks from SQL and read their JSON, screenshot and measure the layout in headless Chrome without logging in, drive a real end-to-end browser test over the Chrome DevTools Protocol, and keep test data clean. Load after importing an app change that affects rendering, JavaScript, AJAX callbacks or data, before calling the work done.
+description: Prove an Oracle APEX page actually works, beyond "apex validate / apex import passed" — render a page server-side from SQL (including modal pages and their checksums), call AJAX callbacks from SQL and read their JSON, screenshot and measure the layout in headless Chrome without logging in, drive a real end-to-end browser test over the Chrome DevTools Protocol, run a nested-cursor query (AOP/JSON data source) exactly as its consumer does instead of trusting a flattened SQLcl copy, and keep test data clean. Load after importing an app change that affects rendering, JavaScript, AJAX callbacks or data, before calling the work done.
 ---
 
 # Verifying APEX Pages at Runtime
@@ -19,6 +19,7 @@ Pick the cheapest one that proves the change:
 | AJAX callback / package logic | Section 2 — callbacks from SQL |
 | Layout / CSS | Section 3 — static screenshot and measurement |
 | Client JavaScript flows (add, edit, save) | Section 4 — end-to-end browser test |
+| Query with nested `cursor(...)` columns (AOP, JSON) | Section 6 — run it whole with `apex_json.write` |
 
 ---
 
@@ -190,3 +191,77 @@ Rules that keep the test honest:
 
 - If the diff shows a row your test did not create, someone else is using
   the workspace: leave it alone, re-baseline, and tell the user.
+
+---
+
+## 6. Test a Nested-Cursor Query the Way Its Consumer Runs It
+
+Some consumers — AOP (APEX Office Print) SQL data sources, JSON/XML
+generators — take **one** statement whose select list contains
+`cursor(...)` expressions and walk the whole tree. SQLcl cannot show that
+result: nested cursors print as `oracle.jdbc.driver.ForwardOnlyResultSet@...`.
+
+The tempting workaround is to drop the outer `cursor(...)` and run the inner
+`select` flat. That is a **different statement**, and it can return
+different numbers. Do not use a flattened copy as proof.
+
+> **Incident.** A document query computed a "to date" total with
+> `... and co.id not in (select s.id from sel_co s)`, where `sel_co` was a
+> CTE (`select co.* from ... join <selected ids>`) that nested cursors in the
+> select list also read. Run flat in SQLcl it returned 50,000; executed whole,
+> with the nested cursors fetched, it returned 4,000 — and the generated PDF
+> showed 4,000. Pointing the `not in` at the plain id-list CTE instead of
+> `sel_co` returned 50,000 on both paths. The exact optimizer mechanism was
+> **not** isolated: treat it as an unproven interaction between a CTE
+> referenced from several places and nested cursor expressions, and keep the
+> exclusion subquery on the simplest id source available.
+
+**Rule:** verify the real statement, through a path that fetches every
+nested cursor. `apex_json.write(sys_refcursor)` does exactly that, needs no
+APEX session, and writes no data:
+
+```plsql
+set serveroutput on size unlimited
+declare
+  l_sql  clob := q'~
+    <paste the exact statement here; keep :P_ORDER_ID_LIST as a bind>
+  ~';
+  l_cur  sys_refcursor;
+  l_json clob;
+  l_pos  pls_integer := 1;
+begin
+  open l_cur for l_sql using '101,102';   -- one value per bind occurrence, in order
+  apex_json.initialize_clob_output;
+  apex_json.write(l_cur);                 -- walks the nested cursor columns too
+  l_json := apex_json.get_clob_output;
+  apex_json.free_output;
+
+  while l_pos <= length(l_json) loop      -- a dbms_output line holds at most 32767 bytes
+    dbms_output.put_line(substr(l_json, l_pos, 3000));
+    l_pos := l_pos + 3000;
+  end loop;
+end;
+/
+```
+
+To pick single values out of a large result, print
+`regexp_substr(l_json, '"total_amount":"[^"]*"')` instead of the whole
+document.
+
+Checklist:
+
+- **Use the statement the application really sent.** Do not retype it. Log
+  it from a real run (`logger.log('sql', l_scope, l_sql)` — the CLOB goes in
+  the `extra` column), copy it from `logger_logs`, and remove the logging
+  afterwards.
+
+- **Binds are positional per occurrence.** A bind name used twice needs its
+  value twice in the `using` clause.
+
+- **Compare with an independent number.** Compute the expected totals with a
+  plain aggregate query first, then check the nested-cursor output against
+  them — before *and* after changing the statement.
+
+- **A wrong number that looks plausible is the dangerous case.** In the
+  incident above nothing errored; the document simply carried a believable
+  but wrong total.
