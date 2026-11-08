@@ -178,7 +178,7 @@ end calculate_totals;
 
 ## 9. Documentation Tags
 
-Every procedure/function needs a JavaDoc-style comment block:
+Every procedure/function needs a JavaDoc-style comment block **in the package body**, directly above the unit. The package spec gets a short comment instead (see "Spec comments" below).
 
 | Tag | Required | Description |
 |---|---|---|
@@ -189,6 +189,19 @@ Every procedure/function needs a JavaDoc-style comment block:
 | `@param` | Yes | One per parameter |
 | `@return` | Functions only | Return type and description |
 | `@input` | AJAX only | APEX globals read (`g_x01`, `g_x02`, etc.) |
+
+### Spec comments: short and simple to read
+
+The package spec is the public contract that callers read. Each unit in the spec gets a short `/** ... */` comment: one or two sentences saying what it does, plus `@return` for functions, and `@param` only when a parameter's meaning is not obvious from its name. Do not copy the body's JavaDoc into the spec — no `@example`, `@issue`, `@author` or `@created`. Resolution order, edge cases and error codes belong in the body.
+
+**GOOD** (spec):
+```plsql
+/** Returns the current user from the trusted APEX/database session. */
+function get_current_user_name
+return varchar2;
+```
+
+**BAD**: the same multi-line block with `@example`, `@issue` and `@author` duplicated in both the spec and the body — two copies to keep in sync, and the spec becomes hard to scan.
 
 ## 10. `@example` Blocks: Match Declaration/Call Alignment
 

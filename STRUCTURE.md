@@ -265,7 +265,7 @@ kebab-case directory name matching the skill's `name:` frontmatter field.
 | `oracle-optimizer-hints` | Oracle optimizer hints for any SQL/PL/SQL (packages, views, batch loads) — when a hint is justified, which one, writing it so it applies, proving it with the Hint Usage Report, delivering it via SQL Patch/SPM; full 19c–26ai catalog, ADB defaults, an APEX-specific section, and a re-runnable `validate_hints.sql` (verified on 26ai) |
 | `apex-outbound-rest` | Calling external REST APIs from PL/SQL with `apex_web_service` — who grants the network ACL, HTTPS on Autonomous, Web Credentials passed by static ID so secrets never enter PL/SQL, the APEX session context `apex_credential` needs, and verified gotchas |
 | `apex-collection-grid` | Editable "edit many rows, save once" list on a Template Component, with the working copy in an APEX collection — pending-action column (`UNCHANGED`/`INSERT`/`UPDATE`/`DELETE`), one AJAX callback per action, ordered requests, single-transaction Save |
-| `apex-runtime-verification` | Proving an APEX page works beyond validate/import — server-side render from SQL (modal checksums included), AJAX callbacks from SQL, headless-Chrome screenshots and measurement without login, DevTools-protocol end-to-end tests, clean test data |
+| `apex-runtime-verification` | Proving an APEX page works beyond validate/import — server-side render from SQL (modal checksums included), AJAX callbacks from SQL, headless-Chrome screenshots and measurement without login, DevTools-protocol end-to-end tests, running a nested-cursor (AOP/JSON) query whole with `apex_json.write` instead of a flattened SQLcl copy, clean test data |
 
 **Example (shape only):**
 ```md

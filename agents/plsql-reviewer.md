@@ -47,7 +47,7 @@ files, at minimum:
 - `%type` anchors instead of hardcoded datatypes (`plsql-standards.md` §5)
 - Parameter list alignment, IN/OUT column at 49 (`plsql-standards.md` §6–7)
 - Logger instrumentation — START/END/params/log_error+raise (`plsql-standards.md` §8)
-- JavaDoc tags present and correctly aligned (`plsql-standards.md` §9–11)
+- JavaDoc tags present and correctly aligned in the package body, and only a short comment in the spec — not a copy of the body's block (`plsql-standards.md` §9–11)
 - SQL injection: no concatenated dynamic SQL, `dbms_assert` for dynamic object names, bind variables via `using` (`security.md` §1)
 - No raw exception text leaked to end users (`security.md` §2)
 - Client-supplied column/attribute names mapped through a `case` whitelist with no `else`, never concatenated (`security.md` §3)
