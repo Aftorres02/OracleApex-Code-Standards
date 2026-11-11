@@ -82,20 +82,38 @@ straight to `main` (see `rules/git-workflow.md` §3):
 
 ```bash
 git switch -c <TICKET>-update-coding-standards
-git submodule update --remote .claude
+.claude/scripts/update-claude-submodule.sh
 git add .claude
 git commit -m "chore: update coding standards submodule"
 git push -u origin <TICKET>-update-coding-standards
 ```
 
-Before opening the PR, check that every `.claude/...` path the project
-references still exists in the new version — a renamed or removed rule,
-skill, or template breaks those links silently:
+On Windows, run `.claude\scripts\update-claude-submodule.bat` instead
+(double-clicking it works too).
 
-```bash
-git grep -ohE '\.claude/[A-Za-z0-9_./-]+' -- ':!.claude' | sed 's/\.*$//' | sort -u \
-  | while read p; do [ -e "$p" ] || echo "MISSING $p"; done
-```
+The script runs `git submodule update --init --remote .claude` and then
+reports:
+
+- the commits and files that changed since the version you were on;
+
+- any `.claude/...` path the project references that no longer exists —
+  a renamed or removed rule, skill, or template breaks those links
+  silently, so fix them before opening the PR;
+
+- whether the new pointer is still uncommitted.
+
+It never commits or pushes, and it stops without changing anything if
+`.claude` has uncommitted edits of its own.
+
+> **Note:** a project still on a version older than the script runs the
+> same thing by hand the first time:
+> `git submodule update --init --remote .claude`. The path check it does
+> is:
+>
+> ```bash
+> git grep -ohE '\.claude/[A-Za-z0-9_./-]+' -- ':(exclude).claude' | sed 's/\.*$//' | sort -u \
+>   | while read p; do [ -e "$p" ] || echo "MISSING $p"; done
+> ```
 
 Once the PR merges, every developer with `submodule.recurse` set (see the
 dev guide) picks it up on their next `git pull` — no action needed from

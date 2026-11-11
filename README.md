@@ -46,6 +46,7 @@ git submodule update --init --recursive
 | `skills/` | Multi-step process guides — versioned APEX migrations, hand-authoring APEXlang apps, investigating a slow refresh/query with real execution plans, Oracle optimizer hints for any SQL/PL/SQL (when/how to hint, full hint catalog, verified on 26ai) plus APEX specifics, calling external REST APIs from PL/SQL with `apex_web_service` and Web Credentials, editable grids on a Template Component backed by an APEX collection, verifying APEX pages at runtime (server-side render, AJAX from SQL, headless-browser tests). (Release process + full project scaffold now live in a separate repo — see `rules/repo-structure.md`.) |
 | `templates/` | Ready-to-copy `.sql`/`.js` skeletons that already implement the `rules/` conventions |
 | `guides/` | Human-facing onboarding narrative for developers and tech leads |
+| `scripts/` | Maintenance tools run by hand in a consumer project — e.g. `update-claude-submodule.sh` / `.bat` to move `.claude` to the latest version of this package |
 
 See [`STRUCTURE.md`](STRUCTURE.md) for a full explanation of every folder,
 what belongs in it, and what doesn't.

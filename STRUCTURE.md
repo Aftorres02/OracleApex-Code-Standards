@@ -356,6 +356,36 @@ doesn't document the reasoning behind it.
 
 ---
 
+## scripts/
+
+**Purpose:** Maintenance tools a person runs by hand in a consumer
+project — e.g. moving the `.claude` submodule to the latest version of
+this package. Unlike `hooks/`, nothing triggers them automatically.
+
+**When Claude Code reads it:** Never automatically — run from the
+consumer project's shell (`.claude/scripts/<name>.sh`, or the `.bat`
+version on Windows).
+
+**Expected content:** Project-independent scripts: no hardcoded repo
+name or path — resolve the consumer project from the script's own
+location. Ship a `.sh` (macOS/Linux, committed with the executable bit)
+and, when Windows users need it, a matching `.bat`. A script that changes
+the consumer repo never commits or pushes — it leaves the change for a
+branch + PR. It should NOT contain checks meant to run on an event
+(belongs in `hooks/`).
+
+**Naming convention:** `<verb>-<object>.sh` / `.bat`, e.g.
+`update-claude-submodule.sh`.
+
+**Current files (2):**
+
+| File | Covers |
+|---|---|
+| `update-claude-submodule.sh` | Moves the consumer's `.claude` submodule to the latest remote commit, lists the new commits and changed files, flags project references to paths that no longer exist, refuses to run over local edits inside the submodule |
+| `update-claude-submodule.bat` | Windows version of the same script — copies itself to `%TEMP%` before running, since `cmd.exe` would otherwise read the version the update writes over it |
+
+---
+
 ## Decision guide
 
 | New content is...                                   | Put it in    |
@@ -367,3 +397,4 @@ doesn't document the reasoning behind it.
 | A copy-paste-ready code skeleton                       | `templates/` |
 | Human-facing onboarding/admin narrative                | `guides/`    |
 | A mechanical, non-LLM check tied to an event (git, CI) | `hooks/`     |
+| A maintenance tool a person runs by hand in a project  | `scripts/`   |
