@@ -40,11 +40,11 @@ git submodule update --init --recursive
 
 | Folder | Contains |
 |---|---|
-| `rules/` | The 11 coding standards, always loaded into context — SQL formatting, PL/SQL, DDL, APEX UX, security, JavaScript, git workflow, repo structure, documentation formatting, error handling, language |
+| `rules/` | The 12 coding standards, always loaded into context — SQL formatting, PL/SQL, DDL, APEX UX, security, JavaScript, git workflow, repo structure, documentation formatting, error handling, language, testing |
 | `agents/` | Reviewer subagents that check code against `rules/*.md` (PL/SQL, APEX pages, SQL performance) |
 | `commands/` | Slash commands (`/new-package`, `/review-sql`, `/gen-crud-page`) that generate code or trigger a review |
-| `skills/` | Multi-step process guides — versioned APEX migrations, hand-authoring APEXlang apps, investigating a slow refresh/query with real execution plans, Oracle optimizer hints for any SQL/PL/SQL (when/how to hint, full hint catalog, verified on 26ai) plus APEX specifics, calling external REST APIs from PL/SQL with `apex_web_service` and Web Credentials, editable grids on a Template Component backed by an APEX collection, verifying APEX pages at runtime (server-side render, AJAX from SQL, headless-browser tests). (Release process + full project scaffold now live in a separate repo — see `rules/repo-structure.md`.) |
-| `templates/` | Ready-to-copy `.sql`/`.js` skeletons that already implement the `rules/` conventions |
+| `skills/` | Multi-step process guides — versioned APEX migrations, hand-authoring APEXlang apps, investigating a slow refresh/query with real execution plans, Oracle optimizer hints for any SQL/PL/SQL (when/how to hint, full hint catalog, verified on 26ai) plus APEX specifics, calling external REST APIs from PL/SQL with `apex_web_service` and Web Credentials, editable grids on a Template Component backed by an APEX collection, verifying APEX pages at runtime (server-side render, AJAX from SQL, headless-browser tests), setting up CI on GitHub Actions (install from scratch + utPLSQL on every PR, from a cached Oracle + APEX + utPLSQL image), writing and running utPLSQL tests. (Release process + full project scaffold now live in a separate repo — see `rules/repo-structure.md`.) |
+| `templates/` | Ready-to-copy `.sql`/`.js` skeletons that already implement the `rules/` conventions, utPLSQL suite skeletons, and the GitHub Actions workflows for CI |
 | `guides/` | Human-facing onboarding narrative for developers and tech leads |
 | `scripts/` | Maintenance tools run by hand in a consumer project — e.g. `update-claude-submodule.sh` / `.bat` to move `.claude` to the latest version of this package |
 

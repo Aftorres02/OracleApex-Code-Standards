@@ -1,0 +1,373 @@
+# Implements: .claude/rules/testing.md §5 (the CI gate)
+name: CI
+
+# -----------------------------------------------------------------------------
+# Template: copy to <project>/.github/workflows/ci.yml and replace every
+# CHANGE_ME. Read .claude/skills/apex-ci-setup/SKILL.md first — it explains
+# each step and the real failures behind it.
+#
+# What it does on every PR (and after every merge to main):
+#   1. starts a prebuilt Oracle Database Free + APEX + utPLSQL image
+#      (build-ci-image.yml makes it; you can reuse a public one),
+#   2. creates a fresh schema + APEX workspace,
+#   3. installs the project from scratch with its own release script,
+#   4. fails if any object is invalid or an APEX app was not imported,
+#   5. compiles every utPLSQL package in tests/ and fails if one doesn't,
+#   6. runs the suite and fails on any failure/error — or if fewer tests ran
+#      than tests/*.pks declares (a suite that silently didn't load).
+# -----------------------------------------------------------------------------
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  # Cancel superseded PR runs; never cancel a run validating a merge to main.
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+permissions:
+  contents: read
+  packages: read
+
+env:
+  # Public, generic image (no project objects): Oracle Database Free 23.26.1,
+  # APEX 26.1, utPLSQL 3.2.3, service FREEPDB1. Swap for your own if you
+  # need other versions (templates/ci_image_workflow_template.yml).
+  BASE_IMAGE: ghcr.io/aftorres02/oracle-apex-utplsql:26.1-utplsql3.2.3
+  DB_SERVICE: FREEPDB1
+  # Baked into the image — not a secret, it only has to match the image.
+  DB_SYS_PASSWORD: CiErsh_2026Pwd
+  # Throwaway schema inside a throwaway container — not a secret either.
+  OWNER_SCHEMA: CHANGE_ME_SCHEMA
+  OWNER_PASSWORD: CiOwner_2026Pwd
+  APEX_WORKSPACE: CHANGE_ME_WORKSPACE
+  # Comma-separated APEX app IDs the release must import; empty = no APEX app.
+  APEX_APP_IDS: "CHANGE_ME_APP_ID"
+  # sqlcl-latest moves under you; pin a versioned zip once you have one that works.
+  SQLCL_URL: https://download.oracle.com/otn_software/java/sqldeveloper/sqlcl-latest.zip
+
+jobs:
+  # ---------------------------------------------------------------------------
+  # Decide whether the PR touches anything but docs. Done as a job instead of
+  # `on.pull_request.paths-ignore` on purpose: a workflow skipped by path
+  # filters never reports a status, so a required "test" check would wait
+  # forever on a docs-only PR. A job skipped by `if:` reports as passed.
+  # ---------------------------------------------------------------------------
+  changes:
+    runs-on: ubuntu-latest
+    outputs:
+      code: ${{ steps.filter.outputs.code }}
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        with:
+          fetch-depth: 0
+
+      - name: Detect non-docs changes
+        id: filter
+        run: |
+          set -euo pipefail
+          if [ "${{ github.event_name }}" != "pull_request" ]; then
+            echo "code=true" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          changed=$(git diff --name-only "${{ github.event.pull_request.base.sha }}" "${{ github.sha }}")
+          echo "Changed files:"; echo "$changed"
+          # Docs-only = every changed file is Markdown, under docs/, or LICENSE.
+          if echo "$changed" | grep -qvE '(\.md$|^docs/|^LICENSE$)'; then
+            echo "code=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "code=false" >> "$GITHUB_OUTPUT"
+            echo "Docs-only change: the test job is skipped (reported as passed)."
+          fi
+
+  test:
+    needs: changes
+    if: needs.changes.outputs.code == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+
+      # The image is ~15-17 GB; the default runner disk can't pull it without this.
+      - name: Free up disk space
+        uses: jlumbroso/free-disk-space@54081f138730dfa15788a46383842cd2f914a1be # v1.3.1
+        with:
+          tool-cache: true
+          android: true
+          dotnet: true
+          haskell: true
+          large-packages: false
+          swap-storage: false
+
+      - name: Set up Java 17 (required by SQLcl)
+        uses: actions/setup-java@cf277c60eb25467037889841efdb72551f06f6c3 # v4.9.1
+        with:
+          distribution: temurin
+          java-version: "17"
+
+      - name: Install SQLcl
+        run: |
+          set -euo pipefail
+          curl -fsSL -o /tmp/sqlcl.zip "$SQLCL_URL"
+          unzip -q /tmp/sqlcl.zip -d "$HOME"
+          echo "$HOME/sqlcl/bin" >> "$GITHUB_PATH"
+          "$HOME/sqlcl/bin/sql" -V
+
+      # Only needed when BASE_IMAGE is private; harmless when it is public.
+      - name: Log in to ghcr.io
+        run: echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u "${{ github.actor }}" --password-stdin
+
+      # No env vars: the image already holds a created database and the SYS
+      # password, so this opens an existing instance (seconds, not minutes).
+      - name: Pull and start the database image
+        run: |
+          set -euo pipefail
+          docker pull "$BASE_IMAGE"
+          docker run -d --name ci-db -p 1521:1521 "$BASE_IMAGE"
+
+      - name: Wait for the database to be ready
+        run: |
+          set -euo pipefail
+          deadline=$((SECONDS + 300))
+          until docker logs ci-db 2>&1 | grep -q "DATABASE IS READY TO USE!"; do
+            if (( SECONDS > deadline )); then
+              echo "::error::database did not become ready within 5 minutes"
+              docker logs ci-db | tail -200
+              exit 1
+            fi
+            sleep 5
+          done
+
+      # A schema alone is not enough: without a workspace, `apex import`
+      # prints "Workspace ... from workspace input is invalid", imports
+      # nothing, and a release that continues on SQL errors still ends green.
+      - name: Create the schema and APEX workspace
+        run: |
+          set -euo pipefail
+          sql -S sys/"$DB_SYS_PASSWORD"@localhost:1521/"$DB_SERVICE" as sysdba <<SQL
+          whenever sqlerror exit failure
+          create user ${OWNER_SCHEMA} identified by "${OWNER_PASSWORD}"
+            default tablespace users temporary tablespace temp
+            quota unlimited on users;
+          -- CHANGE_ME: the privileges your release needs, and no more.
+          grant create session, create table, create view, create sequence
+              , create procedure, create trigger, create type, create job
+              , create synonym
+             to ${OWNER_SCHEMA};
+          begin
+            apex_instance_admin.add_workspace(
+                p_workspace      => '${APEX_WORKSPACE}'
+              , p_primary_schema => '${OWNER_SCHEMA}'
+            );
+            commit;
+          end;
+          /
+          exit
+          SQL
+
+      # CHANGE_ME: your project's own install, exactly as a person runs it.
+      # It must exit non-zero on a fatal error (whenever sqlerror exit).
+      - name: Install the project
+        run: |
+          set -euo pipefail
+          cd release
+          sql -S "$OWNER_SCHEMA"/"$OWNER_PASSWORD"@localhost:1521/"$DB_SERVICE" @_uninstall.sql
+          sql -S "$OWNER_SCHEMA"/"$OWNER_PASSWORD"@localhost:1521/"$DB_SERVICE" @_release.sql
+
+      # Hard gates after the install, independent of how forgiving the
+      # release script is. The CI schema is brand new, so anything invalid in
+      # it came from this release.
+      - name: Verify the install
+        run: |
+          set -euo pipefail
+          sql -S "$OWNER_SCHEMA"/"$OWNER_PASSWORD"@localhost:1521/"$DB_SERVICE" <<SQL
+          whenever sqlerror exit failure
+          set serveroutput on size unlimited feedback off
+          declare
+            l_invalid pls_integer := 0;
+            l_missing pls_integer := 0;
+            l_found   pls_integer;
+          begin
+            for r in (
+              select o.object_type  as object_type
+                   , o.object_name  as object_name
+                from user_objects o
+               where o.status != 'VALID'
+               order by o.object_type, o.object_name
+            )
+            loop
+              dbms_output.put_line('INVALID ' || r.object_type || ' ' || r.object_name);
+              l_invalid := l_invalid + 1;
+            end loop;
+
+            for r in (
+              select to_number(trim(column_value)) as app_id
+                from table(apex_string.split('${APEX_APP_IDS}', ','))
+               where trim(column_value) is not null
+            )
+            loop
+              select count(1)
+                into l_found
+                from apex_applications a
+               where a.application_id = r.app_id;
+              if l_found = 0 then
+                dbms_output.put_line('APEX application ' || r.app_id || ' was not imported');
+                l_missing := l_missing + 1;
+              else
+                dbms_output.put_line('APEX application ' || r.app_id || ' imported');
+              end if;
+            end loop;
+
+            if l_invalid + l_missing > 0 then
+              raise_application_error(-20001, l_invalid || ' invalid object(s), ' || l_missing || ' missing APEX app(s) - see above.');
+            end if;
+          end;
+          /
+          exit
+          SQL
+
+      # Every *.pks then every *.pkb in tests/ — no hand-kept list that a new
+      # suite can be forgotten in. A test package that doesn't compile fails
+      # here with its errors, instead of being silently skipped later.
+      - name: Compile the utPLSQL test packages
+        run: |
+          set -euo pipefail
+          shopt -s nullglob
+          cd tests
+          specs=(*.pks)
+          bodies=(*.pkb)
+          if (( ${#specs[@]} == 0 )); then
+            echo "::error::no test packages (*.pks) found in tests/"
+            exit 1
+          fi
+          {
+            echo "set define off"
+            for f in "${specs[@]}" "${bodies[@]}"; do echo "@$PWD/$f"; done
+            echo "exit"
+          } > "$RUNNER_TEMP/compile_tests.sql"
+          sql -S "$OWNER_SCHEMA"/"$OWNER_PASSWORD"@localhost:1521/"$DB_SERVICE" @"$RUNNER_TEMP/compile_tests.sql"
+          sql -S "$OWNER_SCHEMA"/"$OWNER_PASSWORD"@localhost:1521/"$DB_SERVICE" <<'SQL'
+          whenever sqlerror exit failure
+          set serveroutput on size unlimited feedback off
+          declare
+            l_invalid pls_integer := 0;
+          begin
+            for r in (
+              select e.type      as object_type
+                   , e.name      as object_name
+                   , e.line      as line_no
+                   , e.text      as error_text
+                from user_errors e
+               where e.name like 'UT\_%' escape '\'
+                 and e.attribute = 'ERROR'
+               order by e.name, e.type, e.sequence
+            )
+            loop
+              dbms_output.put_line(r.object_type || ' ' || r.object_name || ' line ' || r.line_no || ': ' || r.error_text);
+            end loop;
+
+            select count(1)
+              into l_invalid
+              from user_objects o
+             where o.object_name like 'UT\_%' escape '\'
+               and o.status != 'VALID';
+
+            if l_invalid > 0 then
+              raise_application_error(-20001, l_invalid || ' test package object(s) do not compile - see above.');
+            end if;
+          end;
+          /
+          exit
+          SQL
+
+      - name: Run the utPLSQL suite (console)
+        run: |
+          set -euo pipefail
+          sql -S "$OWNER_SCHEMA"/"$OWNER_PASSWORD"@localhost:1521/"$DB_SERVICE" <<'SQL'
+          set serveroutput on size unlimited
+          exec ut.run(user);
+          exit
+          SQL
+
+      - name: Run the utPLSQL suite (JUnit XML)
+        run: |
+          set -euo pipefail
+          sql -S "$OWNER_SCHEMA"/"$OWNER_PASSWORD"@localhost:1521/"$DB_SERVICE" <<'SQL'
+          set feedback off heading off pagesize 0 long 1000000 trimspool on
+          spool test-results.xml
+          select column_value from table(ut.run(user, ut_junit_reporter()));
+          spool off
+          exit
+          SQL
+
+      # Gate + run summary. The root <testsuites> element carries the totals.
+      # "tests" must equal the --%test annotations declared in tests/*.pks:
+      # fewer means a suite never loaded (e.g. an invalid spec).
+      - name: Check results
+        run: |
+          set -euo pipefail
+          expected=$(cat tests/*.pks | grep -cE '^[[:space:]]*--%test([[:space:]]*\(|[[:space:]]*$)' || true)
+          python3 - "$expected" <<'PY'
+          import os, sys, xml.etree.ElementTree as ET
+          expected = int(sys.argv[1])
+          try:
+              root = ET.parse("test-results.xml").getroot()
+          except (OSError, ET.ParseError) as exc:
+              print(f"::error::test-results.xml is missing or not valid XML: {exc}")
+              sys.exit(1)
+          tests, failures, errors = (int(root.get(k, "0")) for k in ("tests", "failures", "errors"))
+          problems = []
+          for case in root.iter("testcase"):
+              for kind in ("failure", "error"):
+                  node = case.find(kind)
+                  if node is not None:
+                      detail = (node.get("message") or node.text or "").strip().splitlines()
+                      problems.append((kind, case.get("classname"), case.get("name"), detail[0][:200] if detail else ""))
+          lines = [
+              "### utPLSQL results", "",
+              "| Tests run | Declared in tests/*.pks | Failures | Errors |",
+              "|---:|---:|---:|---:|",
+              f"| {tests} | {expected} | {failures} | {errors} |", "",
+          ]
+          if problems:
+              lines += ["| Result | Suite | Test | Detail |", "|---|---|---|---|"]
+              lines += [f"| {k} | `{c}` | {n} | {d.replace('|', '/')} |" for k, c, n, d in problems]
+          with open(os.environ["GITHUB_STEP_SUMMARY"], "a") as fh:
+              fh.write("\n".join(lines) + "\n")
+          print("\n".join(lines))
+          ok = True
+          if failures or errors:
+              print(f"::error::utPLSQL reported {failures} failure(s) and {errors} error(s)")
+              ok = False
+          if tests != expected:
+              print(f"::error::{tests} test(s) ran but tests/*.pks declares {expected} --%test annotation(s) - a suite did not load")
+              ok = False
+          sys.exit(0 if ok else 1)
+          PY
+
+      - name: Upload JUnit results
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: utplsql-results
+          path: test-results.xml
+          if-no-files-found: warn
+
+      - name: Collect logs on failure
+        if: failure()
+        run: |
+          mkdir -p artifacts
+          docker logs ci-db > artifacts/db.log 2>&1 || true
+          cp release/release_log_*.log artifacts/ 2>/dev/null || true
+
+      - name: Upload failure artifacts
+        if: failure()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: failure-logs
+          path: artifacts/
+          if-no-files-found: ignore

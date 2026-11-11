@@ -35,7 +35,7 @@ This keeps branches, tickets, and deployed scripts traceable to each other.
 2. Write code adhering to the standards in `.claude/rules/`.
 3. Commit with descriptive messages.
 4. Open a PR and fill out `.github/pull_request_template.md`.
-5. Wait for peer review and CI/CD lint pass.
+5. Wait for peer review and a green CI `test` check — never merge on a red or missing one (`testing.md` §5).
 
 **Every change reaches `main` through a branch and a PR — no exceptions.** That includes doc-only fixes, one-line changes, and submodule pointer bumps (`git submodule update --remote .claude`). Never commit or push directly to `main`.
 
@@ -72,6 +72,9 @@ Reviewer expectations — each item enforces a standard defined elsewhere; this 
 | APEX APIs (`apex_collection`, `apex_json`, `g_x01`) only in APEX-layer `*_utils` packages, never in `*_api` | `plsql-standards.md` §3 |
 | Client-supplied column/attribute names mapped through a `case` whitelist | `security.md` §3 |
 | Committed optimizer hints have a `-- HINT_...` justification and show as used in the hint report | `sql-format.md` §13 |
+| Bug fixes add a regression test citing the ticket; new business rules and error paths have tests | `testing.md` §2 |
+| Test suites clean up after themselves (`--%rollback(manual)` + marker cleanup when the code commits) | `testing.md` §4 |
+| CI `test` check green — no gate weakened, no test disabled without a `TODO_` + ticket | `testing.md` §5 |
 | Branch name and compilation code follow convention | §1–2 above |
 
 Developer expectations: verify the code works locally, ensure `logger.log()` instrumentation is present for new packages, fix all PR comments before re-requesting review, and confirm branch/compilation naming before opening the PR.

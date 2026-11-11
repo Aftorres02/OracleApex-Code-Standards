@@ -52,12 +52,15 @@ whole build step and go straight to:
     docker run -d --name db -p 1521:1521 ghcr.io/aftorres02/oracle-apex-utplsql:26.1-utplsql3.2.3
 ```
 
-> **Caveat:** ghcr.io packages are private by default. `GITHUB_TOKEN` only
-> auto-authorizes pulling a package published by *that same repository* —
-> a different repo/org needs either the package made public (owner's
-> GitHub profile → Packages → the package → Package settings → Change
-> visibility → Public), or a PAT with `read:packages` scope stored as a
-> secret in the consuming repo.
+This image is **public** — an anonymous pull of its manifest returned
+200 in November 2026 — so any repo can use it without a token.
+
+> **Caveat:** ghcr.io packages are private by default. If you build your
+> own, `GITHUB_TOKEN` only auto-authorizes pulling it from *the same
+> repository* that published it — another repo/org needs either the
+> package made public (owner's GitHub profile → Packages → the package →
+> Package settings → Change visibility → Public), or a PAT with
+> `read:packages` scope stored as a secret in the consuming repo.
 
 **Connection defaults already baked into the image:** service name
 `FREEPDB1`, and a fixed (non-secret — see `build-ci-image.yml`'s
@@ -77,9 +80,10 @@ If no existing image fits, build your own — see below.
 2. **CI workflow**: pull that image instead of installing anything, then
    run only what's specific to your project.
 
-Copy `OracleAPEX-ErrorShield`'s `.github/workflows/build-ci-image.yml` and
-`.github/workflows/ci.yml` as the concrete starting point — they already
-encode every lesson below.
+Start from `templates/ci_image_workflow_template.yml` (the build) and
+`templates/ci_workflow_template.yml` (the per-PR run) — they encode every
+lesson below. The full CI procedure, from repo prerequisites to required
+checks, is in `skills/apex-ci-setup`.
 
 ---
 
@@ -201,3 +205,15 @@ failures=$(grep -o 'failures="[0-9]*"' test-results.xml | head -1 | grep -o '[0-
 errors=$(grep -o 'errors="[0-9]*"' test-results.xml | head -1 | grep -o '[0-9]*')
 [ "$failures" = "0" ] && [ "$errors" = "0" ]
 ```
+
+### apex-latest.zip installs whatever Oracle published last
+
+The build downloads `apex-latest.zip`, while the image tag names a
+version (`26.1-...`). The day Oracle publishes a newer APEX, a rebuild
+would silently produce a different version under the old tag.
+
+> **Fix:** `templates/ci_image_workflow_template.yml` checks
+> `apex_release.version_no` against `APEX_VERSION` before baking the
+> image and fails on a mismatch — bump `APEX_VERSION` and `IMAGE_TAG`
+> together. (Added after the September 2026 build; not yet exercised by a
+> real build run.)
