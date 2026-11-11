@@ -125,11 +125,11 @@ is tracked (see root `.gitignore`).
 **Purpose:** The source of truth for *what is and isn't allowed* in code —
 SQL formatting, PL/SQL standards, DDL conventions, APEX UX, security,
 JavaScript, git workflow, repo structure, documentation formatting, error
-handling, and language. Each file owns exactly one concern so
+handling, language, and testing. Each file owns exactly one concern so
 agents/commands can cite the narrowest relevant rule instead of one giant
 standards document.
 
-**Current files (11):**
+**Current files (12):**
 
 > **Note:** `CLAUDE.md.template` and `AGENTS.md.template` each carry a
 > copy of this table — when a rule file is added, renamed, or re-scoped,
@@ -148,6 +148,7 @@ standards document.
 | `documentation-formatting.md` | Markdown conventions for standalone docs — headings, lists, dividers, callouts |
 | `error-handling.md` | Layer separation between `raise_application_error` (business packages) and `apex_error.add_error` (APEX layer) |
 | `language.md` | English for identifiers, code comments, and every standards file; what may use the team's language |
+| `testing.md` | utPLSQL suite naming/structure, what needs a test, fixture isolation and `--%rollback(manual)`, what the CI gate must enforce |
 
 **When Claude Code reads it:** Always, in the consumer project — Claude
 Code loads every `.md` file under the consumer's `.claude/rules/`
@@ -253,12 +254,14 @@ folder. It should NOT contain single-fact style coding rules (belongs in
 **Naming convention:** One directory per skill, `skills/<skill-name>/SKILL.md`,
 kebab-case directory name matching the skill's `name:` frontmatter field.
 
-**Current skills (9):**
+**Current skills (11):**
 
 | Skill | Covers |
 |---|---|
 | `apex-migration` | Multi-step guide for versioned APEX/DDL migrations |
 | `apex-ci-image` | Reuse/build a cached Oracle DB + APEX + utPLSQL Docker image for CI, plus lessons learned from a real deployment |
+| `apex-ci-setup` | CI on GitHub Actions end to end — what the repo must provide, filling in `templates/ci_workflow_template.yml`, making the `test` check required, proving the gates with broken-on-purpose PRs, troubleshooting every failure from a real rollout, recommended CD shape |
+| `utplsql-testing` | Writing, running and debugging utPLSQL suites — annotations, fixtures, code that commits and `--%rollback(manual)`, asserting exceptions, reaching fail-safe branches, regression tests per ticket, CI-only failures |
 | `sqlcl-connections` | Run SQL non-interactively via a saved SQLcl connection — checking/creating one, the `connect -name` gotcha, and a reusable `run_sql.sh` |
 | `apexlang-lessons` | Hand-authoring Oracle APEXlang (`.apx`) apps — grammar gotchas, when to skip the orchestrated generation loop, known packaged-tooling bugs, custom Template Component plugins and their runtime behavior |
 | `oracle-performance-investigation` | Diagnose a slow refresh/query with real execution plans (`V$SQL_MONITOR` + `DBMS_XPLAN.DISPLAY_CURSOR`, not `EXPLAIN PLAN FOR`), the `UNPIVOT`→`UNION ALL` fan-out gotcha, and a mechanism-by-mechanism testing/cleanup discipline |
@@ -281,7 +284,7 @@ description: Multi-step guide for versioned APEX/DDL migrations.
 
 ## templates/
 
-**Purpose:** Ready-to-copy `.sql`/`.js` skeletons that already implement
+**Purpose:** Ready-to-copy `.sql`/`.js`/`.yml` skeletons that already implement
 the relevant `rules/*.md` conventions (naming, spacing, alignment,
 documentation tags) so a developer never has to hand-format a new
 package/table/view/trigger/module from scratch.
@@ -297,7 +300,10 @@ it encodes. It should NOT contain prose explanation of the rule itself —
 that belongs in the `rules/*.md` file the header points to.
 
 **Naming convention:** `<object_type>_template.<ext>`, e.g.
-`table_template.sql`, `package_body_template.sql`.
+`table_template.sql`, `package_body_template.sql`,
+`ut_package_spec_template.sql`, `ci_workflow_template.yml`. A `.yml`
+template is a GitHub Actions workflow: GitHub never runs it from here — a
+consumer copies it to its own `.github/workflows/`.
 
 ---
 
@@ -327,7 +333,7 @@ one role.
 | `developer-guide.md` | Developer onboarding narrative |
 | `tech-lead-guide.md` | Environment/workspace provisioning |
 | `consuming-this-repo-dev.md` | Joining a project that already uses this package — cloning, one-time local setup, common mistake to avoid |
-| `consuming-this-repo-tech-lead.md` | Setting this package up for a project the first time, pulling in standards updates, checking the current version, remote URL changes |
+| `consuming-this-repo-tech-lead.md` | Setting this package up for a project the first time, pulling in standards updates, setting up CI, checking the current version, remote URL changes |
 
 ---
 

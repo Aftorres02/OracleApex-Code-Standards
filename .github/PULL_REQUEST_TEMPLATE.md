@@ -21,4 +21,6 @@
 - [ ] **`varchar2` columns** use `char` semantics (e.g., `varchar2(100 char)`).
 - [ ] **`%type` references** are used instead of hardcoded data types where applicable.
 - [ ] **APEX APIs stay in the APEX layer** — `apex_collection`, `apex_json`, `apex_application.g_x01` only in `*_utils` packages, never in `*_api` (`plsql-standards.md` §3).
+- [ ] **Tests**: bug fixes add a regression test citing the ticket; new business rules and error paths are covered; suites clean up after themselves (`testing.md`).
+- [ ] **CI `test` check is green** — no gate weakened, no test disabled without a `TODO_` comment and ticket (`testing.md` §5).
 - [ ] **Client-supplied identifiers** (a column or attribute name sent from the page) go through a `case` whitelist, never into dynamic SQL (`security.md` §3).

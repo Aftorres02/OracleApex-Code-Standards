@@ -1,0 +1,196 @@
+# Implements: .claude/skills/apex-ci-image/SKILL.md (cached Oracle + APEX + utPLSQL image)
+name: Build CI base image (Oracle + APEX + utPLSQL)
+
+# -----------------------------------------------------------------------------
+# Template: copy to <project>/.github/workflows/build-ci-image.yml only if no
+# existing image fits (see .claude/skills/apex-ci-image/SKILL.md, Step 0).
+# Validated as OracleAPEX-ErrorShield's build-ci-image.yml (19m31s, Sep 2026);
+# this copy adds pinned action SHAs and the APEX version check.
+# -----------------------------------------------------------------------------
+
+# Builds a reusable base image with Oracle Database Free, Oracle APEX 26.1,
+# and utPLSQL already installed, and pushes it to ghcr.io. ci.yml pulls this
+# image instead of installing everything from scratch on every PR — this
+# workflow is the "slow" one-time cost, ci.yml is the fast, repeated one.
+#
+# Deliberately generic: no project schema/objects are baked in here, so
+# ghcr.io/<owner>/oracle-apex-utplsql is reusable by any other Oracle APEX
+# project's CI, not just the one that built it.
+#
+# Mechanism: docker commit on a stopped container. The base image does not
+# declare a VOLUME (confirmed with `docker inspect` before writing this —
+# `docker commit` silently drops volume contents, so that check mattered),
+# so as long as the container here is run WITHOUT an external volume mount,
+# the datafiles land in the container's own writable layer and are captured
+# correctly by the commit. Validated locally end-to-end before writing this
+# workflow: create container -> write data -> `docker stop` (triggers the
+# image's own graceful shutdown handling) -> `docker commit` -> start a new
+# container from the committed image with no env vars and no volume -> data
+# and the SYS password both survived, and the DB opened in seconds instead
+# of the multi-minute first-boot creation.
+#
+# Run manually whenever the pinned Oracle/APEX/utPLSQL versions below change.
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  packages: write
+
+env:
+  ORACLE_IMAGE: container-registry.oracle.com/database/free:23.26.1.0
+  DB_SERVICE: FREEPDB1
+  # Baked into the resulting image — every consumer (including ci.yml) uses
+  # this same fixed, non-secret value to connect as SYS. Not a real secret:
+  # anyone who can pull this public image already has it.
+  DB_SYS_PASSWORD: CiErsh_2026Pwd
+  UTPLSQL_TAG: v.3.2.3
+  # The APEX version apex-latest.zip must install — the build fails otherwise.
+  APEX_VERSION: "26.1"
+  IMAGE_NAME: oracle-apex-utplsql
+  IMAGE_TAG: 26.1-utplsql3.2.3
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+
+      - name: Free up disk space
+        uses: jlumbroso/free-disk-space@54081f138730dfa15788a46383842cd2f914a1be # v1.3.1
+        with:
+          tool-cache: true
+          android: true
+          dotnet: true
+          haskell: true
+          large-packages: false
+          swap-storage: false
+
+      - name: Set up Java 17 (required by SQLcl)
+        uses: actions/setup-java@cf277c60eb25467037889841efdb72551f06f6c3 # v4.9.1
+        with:
+          distribution: temurin
+          java-version: "17"
+
+      - name: Install SQLcl
+        run: |
+          set -euo pipefail
+          curl -fL -o /tmp/sqlcl.zip https://download.oracle.com/otn_software/java/sqldeveloper/sqlcl-latest.zip
+          unzip -q /tmp/sqlcl.zip -d "$HOME"
+          echo "$HOME/sqlcl/bin" >> "$GITHUB_PATH"
+
+      - name: Log in to ghcr.io
+        run: echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u "${{ github.actor }}" --password-stdin
+
+      # No -v / volume mount: datafiles must land in the container's own
+      # writable layer so `docker commit` captures them. Both ORACLE_PWD and
+      # ORACLE_PASSWORD are set because the official image's actual variable
+      # name (ORACLE_PWD) turned out to differ from the community-image
+      # convention (ORACLE_PASSWORD) that a first attempt at this workflow
+      # assumed — that mismatch was the cause of an ORA-01017 on the very
+      # first real run of this recipe. Setting both is the safe fix.
+      - name: Start Oracle Database Free (no volume — building the image)
+        run: |
+          set -euo pipefail
+          docker run -d --name ci-db-builder -p 1521:1521 \
+            -e ORACLE_PWD="$DB_SYS_PASSWORD" \
+            -e ORACLE_PASSWORD="$DB_SYS_PASSWORD" \
+            "$ORACLE_IMAGE"
+
+      - name: Wait for the database to be ready
+        run: |
+          set -euo pipefail
+          deadline=$((SECONDS + 1500))
+          until docker logs ci-db-builder 2>&1 | grep -q "DATABASE IS READY TO USE!"; do
+            if (( SECONDS > deadline )); then
+              echo "::error::database did not become ready within 25 minutes"
+              docker logs ci-db-builder | tail -200
+              exit 1
+            fi
+            sleep 10
+          done
+
+      - name: Install Oracle APEX
+        run: |
+          set -euo pipefail
+          curl -fL -o /tmp/apex.zip https://download.oracle.com/otn_software/apex/apex-latest.zip
+          unzip -q /tmp/apex.zip -d /tmp
+          cd /tmp/apex
+          sql -S sys/"$DB_SYS_PASSWORD"@localhost:1521/"$DB_SERVICE" as sysdba <<'SQL'
+          whenever sqlerror exit failure
+          create bigfile tablespace tbs_apex datafile 'tbs_apex.dbf' size 20m autoextend on next 20m maxsize 3g;
+          @apexins.sql TBS_APEX TBS_APEX TEMP /i/
+          exit
+          SQL
+
+      - name: Install utPLSQL
+        run: |
+          set -euo pipefail
+          git clone --branch "$UTPLSQL_TAG" --depth 1 https://github.com/utPLSQL/utPLSQL.git /tmp/utplsql
+          cd /tmp/utplsql/source
+          sql -S sys/"$DB_SYS_PASSWORD"@localhost:1521/"$DB_SERVICE" as sysdba \
+            @install_headless.sql UT3 "$DB_SYS_PASSWORD" users
+
+      - name: Verify nothing is invalid before baking the image
+        run: |
+          set -euo pipefail
+          sql -S sys/"$DB_SYS_PASSWORD"@localhost:1521/"$DB_SERVICE" as sysdba <<SQL
+          whenever sqlerror exit failure
+          set heading off feedback off pagesize 0
+          declare
+            l_count   pls_integer;
+            l_version varchar2(50 char);
+          begin
+            select count(1) into l_count from dba_objects where owner in ('UT3') and status != 'VALID';
+            if l_count > 0 then
+              raise_application_error(-20001, l_count || ' invalid UT3 object(s) — refusing to bake a broken image.');
+            end if;
+
+            -- apex-latest.zip installs whatever Oracle published last; make
+            -- sure that is still the version the image tag claims.
+            select version_no into l_version from apex_release;
+            if l_version not like '${APEX_VERSION}.%' then
+              raise_application_error(-20002, 'APEX ' || l_version || ' installed, but APEX_VERSION is ${APEX_VERSION} — update APEX_VERSION and IMAGE_TAG.');
+            end if;
+          end;
+          /
+          exit
+          SQL
+
+      # `docker stop` sends the signal the image's own entrypoint expects,
+      # which runs a clean instance shutdown before the container exits —
+      # validated locally that this leaves the DB in a state that reopens
+      # cleanly from a commit, no crash recovery needed on next start.
+      - name: Stop the database cleanly
+        run: docker stop ci-db-builder
+
+      - name: Commit and push the image
+        run: |
+          set -euo pipefail
+          # ghcr.io image refs must be lowercase; github.repository_owner
+          # is not guaranteed to be (e.g. "Aftorres02").
+          owner_lower=$(echo "${{ github.repository_owner }}" | tr '[:upper:]' '[:lower:]')
+          IMAGE_REF_TAGGED="ghcr.io/${owner_lower}/${IMAGE_NAME}:${IMAGE_TAG}"
+          IMAGE_REF_LATEST="ghcr.io/${owner_lower}/${IMAGE_NAME}:latest"
+          docker commit ci-db-builder "$IMAGE_REF_TAGGED"
+          docker tag "$IMAGE_REF_TAGGED" "$IMAGE_REF_LATEST"
+          docker push "$IMAGE_REF_TAGGED"
+          docker push "$IMAGE_REF_LATEST"
+          echo "Pushed $IMAGE_REF_TAGGED and $IMAGE_REF_LATEST"
+
+      - name: Collect logs on failure
+        if: failure()
+        run: |
+          mkdir -p artifacts
+          docker logs ci-db-builder > artifacts/db.log 2>&1 || true
+
+      - name: Upload failure artifacts
+        if: failure()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: build-image-failure-logs
+          path: artifacts/
+          if-no-files-found: ignore
