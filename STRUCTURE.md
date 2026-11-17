@@ -253,7 +253,7 @@ folder. It should NOT contain single-fact style coding rules (belongs in
 **Naming convention:** One directory per skill, `skills/<skill-name>/SKILL.md`,
 kebab-case directory name matching the skill's `name:` frontmatter field.
 
-**Current skills (9):**
+**Current skills (10):**
 
 | Skill | Covers |
 |---|---|
@@ -266,6 +266,7 @@ kebab-case directory name matching the skill's `name:` frontmatter field.
 | `apex-outbound-rest` | Calling external REST APIs from PL/SQL with `apex_web_service` — who grants the network ACL, HTTPS on Autonomous, Web Credentials passed by static ID so secrets never enter PL/SQL, the APEX session context `apex_credential` needs, and verified gotchas |
 | `apex-collection-grid` | Editable "edit many rows, save once" list on a Template Component, with the working copy in an APEX collection — pending-action column (`UNCHANGED`/`INSERT`/`UPDATE`/`DELETE`), one AJAX callback per action, ordered requests, single-transaction Save |
 | `apex-runtime-verification` | Proving an APEX page works beyond validate/import — server-side render from SQL (modal checksums included), AJAX callbacks from SQL, headless-Chrome screenshots and measurement without login, DevTools-protocol end-to-end tests, running a nested-cursor (AOP/JSON) query whole with `apex_json.write` instead of a flattened SQLcl copy, clean test data |
+| `apex-page-deploy` | Moving one APEX page between environments with Install Page when the app has different internal IDs per environment — the two errors it causes (different workspace, user interface parent key not found), why editing the header offset does nothing, and `shift_page_export.py` to rewrite the export |
 
 **Example (shape only):**
 ```md
