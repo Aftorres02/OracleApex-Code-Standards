@@ -32,6 +32,7 @@ hooks).
 | `.claude/rules/documentation-formatting.md` | Markdown conventions for standalone docs — headings, lists, dividers, callouts |
 | `.claude/rules/error-handling.md` | Layer separation between `raise_application_error` (business packages) and `apex_error.add_error` (APEX layer) |
 | `.claude/rules/language.md` | English for identifiers, code comments, and every standards file; what may use the team's language |
+| `.claude/rules/testing.md` | utPLSQL suite naming/structure, what needs a test, fixture isolation and `--%rollback(manual)`, what the CI gate must enforce |
 
 ## Other configuration
 

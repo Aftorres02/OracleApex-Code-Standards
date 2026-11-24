@@ -119,7 +119,17 @@ Once the PR merges, every developer with `submodule.recurse` set (see the
 dev guide) picks it up on their next `git pull` — no action needed from
 them.
 
-## 6. Checking what version the project is currently on
+## 6. Set up CI
+
+Every PR should install the project from scratch on a fresh database and
+run its utPLSQL suite before it can merge. The whole procedure — what the
+repo must provide, the workflow to copy
+(`.claude/templates/ci_workflow_template.yml`), making the `test` check
+required on `main`, and proving it catches real breakage — is in
+[`skills/apex-ci-setup/SKILL.md`](../skills/apex-ci-setup/SKILL.md). Test
+conventions are in [`rules/testing.md`](../rules/testing.md).
+
+## 7. Checking what version the project is currently on
 
 ```bash
 cd .claude
@@ -127,7 +137,7 @@ git log -1 --oneline
 cd ..
 ```
 
-## 7. If the remote URL of this package ever changes
+## 8. If the remote URL of this package ever changes
 
 (e.g. moving from a personal account to an org account)
 
