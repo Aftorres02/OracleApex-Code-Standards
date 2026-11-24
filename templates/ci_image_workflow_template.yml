@@ -4,11 +4,12 @@ name: Build CI base image (Oracle + APEX + utPLSQL)
 # -----------------------------------------------------------------------------
 # Template: copy to <project>/.github/workflows/build-ci-image.yml only if no
 # existing image fits (see .claude/skills/apex-ci-image/SKILL.md, Step 0).
-# Validated as OracleAPEX-ErrorShield's build-ci-image.yml (19m31s, Sep 2026);
-# this copy adds pinned action SHAs and the APEX version check.
+# Versions come from ci/versions.env (templates/ci_versions_template.env).
+# The recipe built the current public image (19m31s, Sep 2026); the version
+# file, APEX check and tag-overwrite guard have not run in a real build yet.
 # -----------------------------------------------------------------------------
 
-# Builds a reusable base image with Oracle Database Free, Oracle APEX 26.1,
+# Builds a reusable base image with Oracle Database Free, Oracle APEX,
 # and utPLSQL already installed, and pushes it to ghcr.io. ci.yml pulls this
 # image instead of installing everything from scratch on every PR — this
 # workflow is the "slow" one-time cost, ci.yml is the fast, repeated one.
@@ -33,23 +34,24 @@ name: Build CI base image (Oracle + APEX + utPLSQL)
 
 on:
   workflow_dispatch:
+    inputs:
+      overwrite_existing_tag:
+        description: "Replace CI_IMAGE_TAG if it already exists (branches tested against it will pull the new image)"
+        type: boolean
+        default: false
 
 permissions:
   contents: read
   packages: write
 
 env:
-  ORACLE_IMAGE: container-registry.oracle.com/database/free:23.26.1.0
+  # Versions (database image, APEX, utPLSQL, image tag) come from
+  # ci/versions.env — the "Load tool versions" step reads them.
   DB_SERVICE: FREEPDB1
   # Baked into the resulting image — every consumer (including ci.yml) uses
   # this same fixed, non-secret value to connect as SYS. Not a real secret:
   # anyone who can pull this public image already has it.
   DB_SYS_PASSWORD: CiErsh_2026Pwd
-  UTPLSQL_TAG: v.3.2.3
-  # The APEX version apex-latest.zip must install — the build fails otherwise.
-  APEX_VERSION: "26.1"
-  IMAGE_NAME: oracle-apex-utplsql
-  IMAGE_TAG: 26.1-utplsql3.2.3
 
 jobs:
   build:
@@ -58,6 +60,31 @@ jobs:
 
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+
+      - name: Load tool versions (ci/versions.env)
+        run: |
+          set -euo pipefail
+          grep -E '^[A-Z_][A-Z0-9_]*=' ci/versions.env | tee -a "$GITHUB_ENV"
+          . ci/versions.env
+          # GITHUB_TOKEN can only push under this repo's owner; ref must be lowercase.
+          owner_lower=$(echo "${{ github.repository_owner }}" | tr '[:upper:]' '[:lower:]')
+          case "$CI_IMAGE_REPO" in
+            ghcr.io/"$owner_lower"/*) ;;
+            *) echo "::error::CI_IMAGE_REPO ($CI_IMAGE_REPO) is not under ghcr.io/$owner_lower/ — this repo cannot push there. Point CI_IMAGE_REPO at ghcr.io/$owner_lower/<name> in ci/versions.env."; exit 1 ;;
+          esac
+          echo "IMAGE_REF=${CI_IMAGE_REPO}:${CI_IMAGE_TAG}" | tee -a "$GITHUB_ENV"
+
+      # A tag already in use is what other branches' CI pulls; replacing it
+      # silently changes what they run against. Use a new CI_IMAGE_TAG.
+      - name: Refuse to overwrite an existing tag
+        if: ${{ !inputs.overwrite_existing_tag }}
+        run: |
+          set -euo pipefail
+          echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u "${{ github.actor }}" --password-stdin
+          if docker manifest inspect "$IMAGE_REF" > /dev/null 2>&1; then
+            echo "::error::$IMAGE_REF already exists. Set a new CI_IMAGE_TAG in ci/versions.env, or re-run with overwrite_existing_tag."
+            exit 1
+          fi
 
       - name: Free up disk space
         uses: jlumbroso/free-disk-space@54081f138730dfa15788a46383842cd2f914a1be # v1.3.1
@@ -98,7 +125,7 @@ jobs:
           docker run -d --name ci-db-builder -p 1521:1521 \
             -e ORACLE_PWD="$DB_SYS_PASSWORD" \
             -e ORACLE_PASSWORD="$DB_SYS_PASSWORD" \
-            "$ORACLE_IMAGE"
+            "$ORACLE_DB_IMAGE"
 
       - name: Wait for the database to be ready
         run: |
@@ -116,7 +143,12 @@ jobs:
       - name: Install Oracle APEX
         run: |
           set -euo pipefail
-          curl -fL -o /tmp/apex.zip https://download.oracle.com/otn_software/apex/apex-latest.zip
+          curl -fL -o /tmp/apex.zip "$APEX_URL"
+          # Oracle answers a missing version with "200 OK" and an HTML page.
+          if ! unzip -tq /tmp/apex.zip > /dev/null 2>&1; then
+            echo "::error::APEX_URL in ci/versions.env did not return a zip: $APEX_URL"
+            exit 1
+          fi
           unzip -q /tmp/apex.zip -d /tmp
           cd /tmp/apex
           sql -S sys/"$DB_SYS_PASSWORD"@localhost:1521/"$DB_SERVICE" as sysdba <<'SQL'
@@ -149,11 +181,10 @@ jobs:
               raise_application_error(-20001, l_count || ' invalid UT3 object(s) — refusing to bake a broken image.');
             end if;
 
-            -- apex-latest.zip installs whatever Oracle published last; make
-            -- sure that is still the version the image tag claims.
+            -- Make sure APEX_URL really installed the version the image tag claims.
             select version_no into l_version from apex_release;
             if l_version not like '${APEX_VERSION}.%' then
-              raise_application_error(-20002, 'APEX ' || l_version || ' installed, but APEX_VERSION is ${APEX_VERSION} — update APEX_VERSION and IMAGE_TAG.');
+              raise_application_error(-20002, 'APEX ' || l_version || ' installed, but APEX_VERSION is ${APEX_VERSION} — check APEX_URL / APEX_VERSION in ci/versions.env.');
             end if;
           end;
           /
@@ -170,16 +201,12 @@ jobs:
       - name: Commit and push the image
         run: |
           set -euo pipefail
-          # ghcr.io image refs must be lowercase; github.repository_owner
-          # is not guaranteed to be (e.g. "Aftorres02").
-          owner_lower=$(echo "${{ github.repository_owner }}" | tr '[:upper:]' '[:lower:]')
-          IMAGE_REF_TAGGED="ghcr.io/${owner_lower}/${IMAGE_NAME}:${IMAGE_TAG}"
-          IMAGE_REF_LATEST="ghcr.io/${owner_lower}/${IMAGE_NAME}:latest"
-          docker commit ci-db-builder "$IMAGE_REF_TAGGED"
-          docker tag "$IMAGE_REF_TAGGED" "$IMAGE_REF_LATEST"
-          docker push "$IMAGE_REF_TAGGED"
+          IMAGE_REF_LATEST="${CI_IMAGE_REPO}:latest"
+          docker commit ci-db-builder "$IMAGE_REF"
+          docker tag "$IMAGE_REF" "$IMAGE_REF_LATEST"
+          docker push "$IMAGE_REF"
           docker push "$IMAGE_REF_LATEST"
-          echo "Pushed $IMAGE_REF_TAGGED and $IMAGE_REF_LATEST"
+          echo "Pushed $IMAGE_REF and $IMAGE_REF_LATEST"
 
       - name: Collect logs on failure
         if: failure()

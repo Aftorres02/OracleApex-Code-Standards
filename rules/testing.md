@@ -80,6 +80,11 @@ step by step lives in the `utplsql-testing` skill.
   failing or erroring test, or fewer tests run than `tests/*.pks` declares.
   `templates/ci_workflow_template.yml` implements all of these.
 
+- Code coverage is **reported, not gated**: CI shows the line coverage of
+  the project's own objects on every run. Use it to find untested
+  branches; don't chase a percentage, and don't add a coverage threshold
+  without a baseline the team agreed on.
+
 - Never weaken a gate to get a green check. A test that cannot pass yet is
   disabled with `--%disabled(<reason>)` plus a `TODO_` comment
   (`sql-format.md` §3) that names the ticket fixing it.

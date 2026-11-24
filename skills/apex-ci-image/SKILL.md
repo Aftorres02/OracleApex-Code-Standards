@@ -208,12 +208,14 @@ errors=$(grep -o 'errors="[0-9]*"' test-results.xml | head -1 | grep -o '[0-9]*'
 
 ### apex-latest.zip installs whatever Oracle published last
 
-The build downloads `apex-latest.zip`, while the image tag names a
-version (`26.1-...`). The day Oracle publishes a newer APEX, a rebuild
-would silently produce a different version under the old tag.
+The first build downloaded `apex-latest.zip` while the image tag named a
+version (`26.1-...`). By November 2026 `apex-latest.zip` was already a
+different file (337 MB) from `apex_26.1.zip` (326 MB) — a rebuild would
+have silently produced a different APEX under the same tag.
 
-> **Fix:** `templates/ci_image_workflow_template.yml` checks
-> `apex_release.version_no` against `APEX_VERSION` before baking the
-> image and fails on a mismatch — bump `APEX_VERSION` and `IMAGE_TAG`
-> together. (Added after the September 2026 build; not yet exercised by a
-> real build run.)
+> **Fix:** `templates/ci_image_workflow_template.yml` takes `APEX_URL`
+> (a versioned zip such as `apex_26.1.zip`) and `APEX_VERSION` from
+> `ci/versions.env`, and checks `apex_release.version_no` against
+> `APEX_VERSION` before baking the image. It also refuses to overwrite an
+> existing image tag. (Added after the September 2026 build; not yet
+> exercised by a real build run.)

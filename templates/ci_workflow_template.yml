@@ -33,10 +33,8 @@ permissions:
   packages: read
 
 env:
-  # Public, generic image (no project objects): Oracle Database Free 23.26.1,
-  # APEX 26.1, utPLSQL 3.2.3, service FREEPDB1. Swap for your own if you
-  # need other versions (templates/ci_image_workflow_template.yml).
-  BASE_IMAGE: ghcr.io/aftorres02/oracle-apex-utplsql:26.1-utplsql3.2.3
+  # Tool versions (database image, APEX, utPLSQL, SQLcl) live in
+  # ci/versions.env — the "Load tool versions" step reads them.
   DB_SERVICE: FREEPDB1
   # Baked into the image — not a secret, it only has to match the image.
   DB_SYS_PASSWORD: CiErsh_2026Pwd
@@ -46,8 +44,9 @@ env:
   APEX_WORKSPACE: CHANGE_ME_WORKSPACE
   # Comma-separated APEX app IDs the release must import; empty = no APEX app.
   APEX_APP_IDS: "CHANGE_ME_APP_ID"
-  # sqlcl-latest moves under you; pin a versioned zip once you have one that works.
-  SQLCL_URL: https://download.oracle.com/otn_software/java/sqldeveloper/sqlcl-latest.zip
+  # Objects whose code coverage is reported (SQL LIKE, escape '\') — the
+  # project prefix, so vendored code and the ut_ test packages are left out.
+  COVERAGE_OBJECTS_LIKE: 'CHANGE_ME\_%'
 
 jobs:
   # ---------------------------------------------------------------------------
@@ -92,6 +91,13 @@ jobs:
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
 
+      - name: Load tool versions (ci/versions.env)
+        run: |
+          set -euo pipefail
+          grep -E '^[A-Z_][A-Z0-9_]*=' ci/versions.env | tee -a "$GITHUB_ENV"
+          . ci/versions.env
+          echo "BASE_IMAGE=${CI_IMAGE_REPO}:${CI_IMAGE_TAG}" | tee -a "$GITHUB_ENV"
+
       # The image is ~15-17 GB; the default runner disk can't pull it without this.
       - name: Free up disk space
         uses: jlumbroso/free-disk-space@54081f138730dfa15788a46383842cd2f914a1be # v1.3.1
@@ -113,6 +119,12 @@ jobs:
         run: |
           set -euo pipefail
           curl -fsSL -o /tmp/sqlcl.zip "$SQLCL_URL"
+          # Oracle answers a missing version with "200 OK" and an HTML page,
+          # so curl -f alone does not catch a wrong SQLCL_URL.
+          if ! unzip -tq /tmp/sqlcl.zip > /dev/null 2>&1; then
+            echo "::error::SQLCL_URL in ci/versions.env did not return a zip: $SQLCL_URL"
+            exit 1
+          fi
           unzip -q /tmp/sqlcl.zip -d "$HOME"
           echo "$HOME/sqlcl/bin" >> "$GITHUB_PATH"
           "$HOME/sqlcl/bin/sql" -V
@@ -348,6 +360,70 @@ jobs:
               ok = False
           sys.exit(0 if ok else 1)
           PY
+
+      # Informational only: never fails the job (continue-on-error). Runs the
+      # suite once more with utPLSQL's coverage reporters, limited to the
+      # objects matching COVERAGE_OBJECTS_LIKE.
+      - name: Code coverage (informational)
+        continue-on-error: true
+        run: |
+          set -euo pipefail
+          # Run from a script file: "set termout off" only applies to @scripts,
+          # and keeps the multi-MB HTML report out of the step log.
+          for reporter in cobertura html; do
+            cat > "$RUNNER_TEMP/coverage_${reporter}.sql" <<SQL
+          whenever sqlerror exit failure
+          set feedback off heading off pagesize 0 verify off long 100000000 longchunksize 32767 linesize 32767 trimspool on
+          column objects new_value objects noprint
+          select listagg('''' || o.object_name || '''', ',') within group (order by o.object_name) as objects
+            from (
+                   select distinct uo.object_name as object_name
+                     from user_objects uo
+                    where uo.object_name like '${COVERAGE_OBJECTS_LIKE}' escape '\'
+                      and uo.object_type in ('PACKAGE BODY', 'TYPE BODY', 'PROCEDURE', 'FUNCTION', 'TRIGGER')
+                 ) o;
+          set termout off
+          spool coverage.${reporter}.out
+          select column_value
+            from table(
+                   ut.run(
+                       a_path            => user
+                     , a_reporter        => ut_coverage_${reporter}_reporter()
+                     , a_include_objects => ut_varchar2_list(&objects)
+                   )
+                 );
+          spool off
+          exit
+          SQL
+            sql -S "$OWNER_SCHEMA"/"$OWNER_PASSWORD"@localhost:1521/"$DB_SERVICE" @"$RUNNER_TEMP/coverage_${reporter}.sql"
+          done
+          mkdir -p coverage
+          mv coverage.cobertura.out coverage/coverage.xml
+          mv coverage.html.out coverage/index.html
+          python3 - <<'PY'
+          import os, xml.etree.ElementTree as ET
+          root = ET.parse("coverage/coverage.xml").getroot()
+          rate = float(root.get("line-rate", "0"))
+          lines = [
+              "### Code coverage (informational)", "",
+              f"**{rate:.1%}** of lines ({root.get('lines-covered', '?')} of {root.get('lines-valid', '?')}) — full report in the `coverage` artifact.", "",
+              "| Object | Line coverage |", "|---|---:|",
+          ]
+          classes = sorted(root.iter("class"), key=lambda c: float(c.get("line-rate", "0")))
+          lines += [f"| `{c.get('name')}` | {float(c.get('line-rate', '0')):.1%} |" for c in classes]
+          text = "\n".join(lines) + "\n"
+          with open(os.environ["GITHUB_STEP_SUMMARY"], "a") as fh:
+              fh.write(text)
+          print(text)
+          PY
+
+      - name: Upload coverage report
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: coverage
+          path: coverage/
+          if-no-files-found: ignore
 
       - name: Upload JUnit results
         if: always()

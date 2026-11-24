@@ -35,6 +35,7 @@ ci.yml (every PR + every push to main, ~5-6 min)
         verify: 0 invalid objects, every APEX app imported
         compile tests/*.pks, *.pkb ─► fail on any compile error
         ut.run ─► JUnit XML ─► fail on failures/errors or test-count mismatch
+        ut.run with coverage reporters ─► summary table + HTML (never fails)
         upload results; on failure, DB log + release log
 ```
 
@@ -72,8 +73,11 @@ update, a job to drop). See §7, `ORA-20987`.
 
 ### A matching uninstall
 
-`release/_uninstall.sql`, where every drop is guarded, so it is a no-op on
-an empty schema. CI runs it first to mirror the documented reset flow.
+`release/_uninstall.sql`, where every drop happens only if the object
+exists (check `user_objects` first). CI runs it first, on an empty schema,
+to mirror the documented reset flow; with unguarded `drop` statements that
+step prints dozens of `ORA-04043`/`ORA-00942` lines on every run and a
+real error there goes unnoticed.
 
 ### A tests folder
 
@@ -98,6 +102,27 @@ Other versions → build your own with
 `templates/ci_image_workflow_template.yml`; read `skills/apex-ci-image`
 first.
 
+### Pin every version in one file
+
+Copy `templates/ci_versions_template.env` to `ci/versions.env`. Both
+workflows read it: the database image, APEX zip, utPLSQL tag and CI image
+(all baked into the image) and the SQLcl zip (installed on every run).
+Never use `sqlcl-latest.zip` or `apex-latest.zip`: they change without
+notice — by November 2026 `apex-latest.zip` was already a different file
+from the `apex_26.1.zip` the image was built from.
+
+Upgrading is a PR that edits `ci/versions.env`:
+
+- **SQLcl:** change `SQLCL_URL`; the PR's own run uses it.
+
+- **Database, APEX or utPLSQL:** set a **new** `CI_IMAGE_TAG`, run
+  `build-ci-image.yml` on the PR's branch, then push. The build refuses to
+  overwrite an existing tag, because other branches still pull it.
+
+> **Note:** Oracle answers a download URL for a version that does not
+> exist with `200 OK` and an HTML page, so `curl -f` succeeds. Both
+> templates run `unzip -tq` on every download and fail with the URL.
+
 ---
 
 ## 4. Add the Workflow
@@ -105,8 +130,9 @@ first.
 ### Copy the template
 
 ```bash
-mkdir -p .github/workflows
+mkdir -p .github/workflows ci
 cp .claude/templates/ci_workflow_template.yml .github/workflows/ci.yml
+cp .claude/templates/ci_versions_template.env ci/versions.env
 ```
 
 ### Fill in every CHANGE_ME
@@ -118,6 +144,7 @@ cp .claude/templates/ci_workflow_template.yml .github/workflows/ci.yml
 | `APEX_APP_IDS` | Comma-separated app IDs the release must import; `""` if the project has no app |
 | The `grant` list | The privileges the release needs — the same ones your "create user" script grants. Missing one shows up as a prerequisite-check failure or invalid objects |
 | "Install the project" step | The project's own install commands, from the folder they expect to run in |
+| `COVERAGE_OBJECTS_LIKE` | SQL `LIKE` pattern (escape `\`) for the objects whose coverage is reported — the project prefix, e.g. `'ERSH\_%'`, so vendored code is left out |
 
 `grep -n CHANGE_ME .github/workflows/ci.yml` must return nothing before
 you push.
@@ -146,6 +173,7 @@ runs (November 2026):
 | Create schema + workspace | 4s | |
 | Install the project (ErrorShield: uninstall + release + APEX import) | 25s | |
 | Verify, compile tests, run 38 tests twice, check | 15s | |
+| Code coverage (two more suite runs) | 7s | |
 | **Total** | **5-6 min** | up to ~9 min |
 
 About 75% of every run is infrastructure: freeing disk space and pulling
@@ -155,20 +183,36 @@ four other runs started at the same time), not with the project.
 ### Require the check on main
 
 Once the PR is green and merged, protect `main` so nothing merges on a red
-check. Repo → Settings → Branches → Add rule for `main` → *Require a pull
-request before merging* + *Require status checks to pass* → select
-`test`. Or with `gh` (admin rights needed):
+check. Repo → Settings → Branches → *Add classic branch protection rule*:
+
+1. Branch name pattern: `main`.
+
+2. *Require a pull request before merging* — and **uncheck** *Require
+   approvals* if one person does most merges: GitHub never lets you
+   approve your own PR.
+
+3. *Require status checks to pass before merging* → search `test` →
+   select it.
+
+4. *Do not allow bypassing the above settings*. Without it, admins can
+   merge on a red check — and when the main contributor is also the repo
+   admin, the rule then applies to nobody.
+
+Or with `gh` (admin rights needed):
 
 ```bash
 gh api -X PUT repos/<owner>/<repo>/branches/main/protection --input - <<'JSON'
 {
   "required_status_checks": { "strict": false, "contexts": ["test"] },
-  "enforce_admins": false,
-  "required_pull_request_reviews": null,
+  "enforce_admins": true,
+  "required_pull_request_reviews": { "required_approving_review_count": 0 },
   "restrictions": null
 }
 JSON
 ```
+
+Check it: open a PR with a deliberately failing test — the merge button
+must stay disabled.
 
 > **Note:** require the `test` job, not the workflow. The template skips
 > `test` on docs-only PRs through the `changes` job; a job skipped by
@@ -228,10 +272,12 @@ Two lessons from the left column apply to any project:
 | `Workspace: X from workspace input is invalid` and the job still green | The workspace was never created; the release continues on SQL errors, so the app was silently not imported | The "Create the schema and APEX workspace" step; "Verify the install" now fails on a missing app |
 | `HTTP 404: workflow ... not found on the default branch` running a new manual workflow | GitHub only registers a `workflow_dispatch`-only workflow once it is on the default branch or has run once | Temporarily add a `push` trigger for that branch, push once, revert |
 | Disk full / `no space left on device` pulling or building the image | 15-17 GB image on a default runner | The "Free up disk space" step — in both workflows |
-| Lots of `ORA-04043: object ... does not exist` at the start of "Install the project" | `_uninstall.sql` on an empty schema — expected noise | None, as long as every drop is guarded and the step still passes |
+| Lots of `ORA-04043: object ... does not exist` / `ORA-00942` at the start of "Install the project" | Unguarded `drop` statements in `_uninstall.sql`, run on an empty schema | Drop only what exists in `user_objects` (§2) |
 | "N test(s) ran but tests/*.pks declares M" | A test spec does not compile, so utPLSQL never read its annotations | Fix the spec; the compile step above shows the error |
 | A run was cancelled | A newer push to the same PR — `cancel-in-progress` | None; the newer run is the one that counts |
-| SQLcl behaves differently from one week to the next | `sqlcl-latest.zip` changed | Pin `SQLCL_URL` to a versioned zip that works |
+| SQLcl behaves differently from one week to the next | `sqlcl-latest.zip` changed | Pin `SQLCL_URL` in `ci/versions.env` (§3) |
+| "... did not return a zip" right after a version change | The URL names a version Oracle doesn't publish; Oracle answers `200 OK` with an HTML page | Copy the exact file name from Oracle's download page |
+| "... already exists. Set a new CI_IMAGE_TAG" running the image build | Rebuilding would replace the image other branches use | New `CI_IMAGE_TAG`, or re-run with `overwrite_existing_tag` if you really mean it |
 
 To dig into any failure:
 

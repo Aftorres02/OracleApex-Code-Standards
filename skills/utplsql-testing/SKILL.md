@@ -60,6 +60,33 @@ All commands run connected as the schema that owns the code and the tests.
 `set serveroutput on size unlimited` first, or the console report is
 empty.
 
+### Code coverage
+
+Which lines of your own code the suite executed — the quickest way to
+find a branch nobody tests. Limit it to your objects, or vendored code
+(Logger) drowns the number:
+
+```sql
+set termout off long 100000000 longchunksize 32767 linesize 32767 pagesize 0 heading off feedback off trimspool on
+spool coverage.html
+select column_value
+  from table(
+         ut.run(
+             a_path            => user
+           , a_reporter        => ut_coverage_html_reporter()
+           , a_include_objects => ut_varchar2_list('ERSH_ERROR_HANDLER_API')
+         )
+       );
+spool off
+```
+
+Run it as a script (`@coverage.sql`): `set termout off` is ignored for
+lines typed or piped in, and the report is several MB. Swap in
+`ut_coverage_cobertura_reporter()` for an XML with the totals
+(`line-rate`, `lines-covered`, `lines-valid`). Only executable lines
+count — ErrorShield's 1152-line package body has 162. CI reports it on
+every run (`templates/ci_workflow_template.yml`, "Code coverage").
+
 Keep a `tests/run_tests.sql` that compiles every test package and runs
 the suite, so a developer runs the whole thing with one command:
 
